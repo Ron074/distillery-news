@@ -1,0 +1,25 @@
+========================================================================
+M1 - Financial PhraseBank (50agree)  |  arm: zeroshot
+model: ProsusAI/finbert
+run:   2026-09-22T23:00:43+00:00  seed=42  device=cpu
+========================================================================
+
+test n = 483   (train 3874 / val 483)
+
+  accuracy     0.8965
+  macro F1     0.8924
+  weighted F1  0.8975
+
+per class:
+  label         prec     rec      f1      n
+  negative    0.8406  0.9667  0.8992     60
+  neutral     0.9614  0.8676  0.9121    287
+  positive    0.8129  0.9265  0.8660    136
+
+confusion matrix (rows = true, cols = pred; order: negative, neutral, positive):
+  negative      58     1     1
+  neutral       10   249    28
+  positive       1     9   126
+inference: 26.39s for 483 sentences (54.63 ms/sentence)
+
+NOTE: Off-the-shelf checkpoint, NOT a clean held-out score: ProsusAI/finbert was itself fine-tuned on Financial PhraseBank, so these test sentences were very likely in its training data. Treat as a pipeline/label-mapping sanity check and an upper reference, not as a reproduction.

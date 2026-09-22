@@ -1,0 +1,76 @@
+{
+  "model": "ProsusAI/finbert",
+  "metrics": {
+    "accuracy": 0.8964803312629399,
+    "macro_f1": 0.8924306999109205,
+    "weighted_f1": 0.8975070704298395,
+    "per_class": {
+      "negative": {
+        "precision": 0.8405797101449275,
+        "recall": 0.9666666666666667,
+        "f1-score": 0.8992248062015504,
+        "support": 60.0
+      },
+      "neutral": {
+        "precision": 0.9613899613899614,
+        "recall": 0.867595818815331,
+        "f1-score": 0.9120879120879121,
+        "support": 287.0
+      },
+      "positive": {
+        "precision": 0.8129032258064516,
+        "recall": 0.9264705882352942,
+        "f1-score": 0.865979381443299,
+        "support": 136.0
+      },
+      "accuracy": 0.8964803312629399,
+      "macro avg": {
+        "precision": 0.8716242991137801,
+        "recall": 0.920244357905764,
+        "f1-score": 0.8924306999109205,
+        "support": 483.0
+      },
+      "weighted avg": {
+        "precision": 0.9045725470751387,
+        "recall": 0.8964803312629399,
+        "f1-score": 0.8975070704298395,
+        "support": 483.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        58,
+        1,
+        1
+      ],
+      [
+        10,
+        249,
+        28
+      ],
+      [
+        1,
+        9,
+        126
+      ]
+    ]
+  },
+  "train_seconds": null,
+  "infer_seconds": 26.388313199975528,
+  "epochs": null,
+  "device": "cpu",
+  "checkpoint_id2label": {
+    "0": "positive",
+    "1": "negative",
+    "2": "neutral"
+  },
+  "notes": "Off-the-shelf checkpoint, NOT a clean held-out score: ProsusAI/finbert was itself fine-tuned on Financial PhraseBank, so these test sentences were very likely in its training data. Treat as a pipeline/label-mapping sanity check and an upper reference, not as a reproduction.",
+  "arm": "zeroshot",
+  "agreement": "50agree",
+  "seed": 42,
+  "n_train": 3874,
+  "n_val": 483,
+  "n_test": 483,
+  "timestamp": "2026-09-22T23:00:43+00:00",
+  "platform": "Windows AMD64 python 3.14.5"
+}

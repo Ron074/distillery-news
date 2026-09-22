@@ -1,0 +1,16 @@
+# Verified on Windows 11 / Python 3.14 / CPU-only.
+#
+# For a CPU-only machine install torch from the CPU wheel index first (much smaller than the
+# default CUDA build), then the rest:
+#
+#     python -m venv .venv
+#     .venv/Scripts/python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+#     .venv/Scripts/python -m pip install -r requirements.txt
+#
+# On Colab (free T4) torch is preinstalled; `pip install -r requirements.txt` is enough.
+
+torch>=2.4
+transformers>=4.46
+scikit-learn>=1.4
+pandas>=2.2
+numpy>=1.26

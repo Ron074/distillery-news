@@ -1,0 +1,70 @@
+{
+  "model": "tfidf(1,2) + logistic regression",
+  "metrics": {
+    "accuracy": 0.8012422360248447,
+    "macro_f1": 0.766465815535139,
+    "weighted_f1": 0.8007017252619365,
+    "per_class": {
+      "negative": {
+        "precision": 0.75,
+        "recall": 0.7,
+        "f1-score": 0.7241379310344828,
+        "support": 60.0
+      },
+      "neutral": {
+        "precision": 0.8487972508591065,
+        "recall": 0.8606271777003485,
+        "f1-score": 0.8546712802768166,
+        "support": 287.0
+      },
+      "positive": {
+        "precision": 0.7205882352941176,
+        "recall": 0.7205882352941176,
+        "f1-score": 0.7205882352941176,
+        "support": 136.0
+      },
+      "accuracy": 0.8012422360248447,
+      "macro avg": {
+        "precision": 0.7731284953844081,
+        "recall": 0.7604051376648221,
+        "f1-score": 0.766465815535139,
+        "support": 483.0
+      },
+      "weighted avg": {
+        "precision": 0.8004240393303593,
+        "recall": 0.8012422360248447,
+        "f1-score": 0.8007017252619365,
+        "support": 483.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        42,
+        10,
+        8
+      ],
+      [
+        10,
+        247,
+        30
+      ],
+      [
+        4,
+        34,
+        98
+      ]
+    ]
+  },
+  "train_seconds": 0.4517792999977246,
+  "infer_seconds": 0.012646600021980703,
+  "epochs": null,
+  "device": "cpu",
+  "arm": "baseline",
+  "agreement": "50agree",
+  "seed": 42,
+  "n_train": 3874,
+  "n_val": 483,
+  "n_test": 483,
+  "timestamp": "2026-09-22T22:59:37+00:00",
+  "platform": "Windows AMD64 python 3.14.5"
+}

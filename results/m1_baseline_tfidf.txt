@@ -1,0 +1,25 @@
+========================================================================
+M1 - Financial PhraseBank (50agree)  |  arm: baseline
+model: tfidf(1,2) + logistic regression
+run:   2026-09-22T22:59:37+00:00  seed=42  device=cpu
+========================================================================
+
+test n = 483   (train 3874 / val 483)
+
+  accuracy     0.8012
+  macro F1     0.7665
+  weighted F1  0.8007
+
+per class:
+  label         prec     rec      f1      n
+  negative    0.7500  0.7000  0.7241     60
+  neutral     0.8488  0.8606  0.8547    287
+  positive    0.7206  0.7206  0.7206    136
+
+confusion matrix (rows = true, cols = pred; order: negative, neutral, positive):
+  negative      42    10     8
+  neutral       10   247    30
+  positive       4    34    98
+
+train wall-clock: 0.5s
+inference: 0.01s for 483 sentences (0.03 ms/sentence)
