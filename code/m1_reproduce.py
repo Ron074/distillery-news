@@ -130,6 +130,19 @@ def run_baseline(train, val, test, args) -> dict:
     }
 
 
+def load_tokenizer(name: str):
+    from transformers import AutoTokenizer
+
+    try:
+        return AutoTokenizer.from_pretrained(name)
+    except ValueError:
+        # yiyanghkust/finbert-pretrain ships a bare vocab.txt with no tokenizer_config.json, so
+        # AutoTokenizer cannot resolve a class; its own config declares a BERT WordPiece model.
+        from transformers import BertTokenizerFast
+
+        return BertTokenizerFast.from_pretrained(name)
+
+
 def _predict_transformer(model, tokenizer, sentences, device, batch_size, max_length):
     import torch
 
@@ -157,10 +170,10 @@ def _checkpoint_label_permutation(model) -> list[int] | None:
 
 def run_zeroshot(train, val, test, args) -> dict:
     import torch
-    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+    from transformers import AutoModelForSequenceClassification
 
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = load_tokenizer(args.model)
     model = AutoModelForSequenceClassification.from_pretrained(args.model).to(device)
 
     perm = _checkpoint_label_permutation(model)
@@ -196,10 +209,10 @@ def run_zeroshot(train, val, test, args) -> dict:
 def run_finetune(train, val, test, args) -> dict:
     import torch
     from torch.utils.data import DataLoader
-    from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_linear_schedule_with_warmup
+    from transformers import AutoModelForSequenceClassification, get_linear_schedule_with_warmup
 
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = load_tokenizer(args.model)
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model,
         num_labels=len(LABELS),
