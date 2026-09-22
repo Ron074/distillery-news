@@ -143,6 +143,23 @@ def load_tokenizer(name: str):
         return BertTokenizerFast.from_pretrained(name)
 
 
+def load_model(name: str, **kwargs):
+    from transformers import AutoModelForSequenceClassification
+
+    try:
+        return AutoModelForSequenceClassification.from_pretrained(name, **kwargs)
+    except ValueError:
+        # Same checkpoint, second gap: its config.json omits the `model_type` key, so AutoModel
+        # cannot dispatch either. Name the class only once the config confirms it is a BERT, so a
+        # genuinely unsupported architecture still raises instead of loading mismatched weights.
+        from transformers import BertConfig, BertForSequenceClassification
+
+        config = BertConfig.from_pretrained(name)
+        if not any(arch.startswith("Bert") for arch in (config.architectures or [])):
+            raise
+        return BertForSequenceClassification.from_pretrained(name, **kwargs)
+
+
 def _predict_transformer(model, tokenizer, sentences, device, batch_size, max_length):
     import torch
 
@@ -170,11 +187,9 @@ def _checkpoint_label_permutation(model) -> list[int] | None:
 
 def run_zeroshot(train, val, test, args) -> dict:
     import torch
-    from transformers import AutoModelForSequenceClassification
-
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = load_tokenizer(args.model)
-    model = AutoModelForSequenceClassification.from_pretrained(args.model).to(device)
+    model = load_model(args.model).to(device)
 
     perm = _checkpoint_label_permutation(model)
     if perm is None:
@@ -209,11 +224,11 @@ def run_zeroshot(train, val, test, args) -> dict:
 def run_finetune(train, val, test, args) -> dict:
     import torch
     from torch.utils.data import DataLoader
-    from transformers import AutoModelForSequenceClassification, get_linear_schedule_with_warmup
+    from transformers import get_linear_schedule_with_warmup
 
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = load_tokenizer(args.model)
-    model = AutoModelForSequenceClassification.from_pretrained(
+    model = load_model(
         args.model,
         num_labels=len(LABELS),
         id2label={i: name for i, name in enumerate(LABELS)},
