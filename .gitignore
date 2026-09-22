@@ -1,0 +1,36 @@
+# --- secrets (any keys load from an external .env, never committed) ---
+.env
+*.env
+
+# --- data: large / licensed; obtained per data/README.md, never committed ---
+*.jsonl
+*.jsonl.bak*
+*.bak
+*.csv
+*.parquet
+data/raw/
+data/wrds/
+
+# --- model artifacts / checkpoints (large) ---
+*.pt
+*.bin
+*.safetensors
+checkpoints/
+runs/
+
+# --- logs / runtime scratch ---
+*.log
+.ipynb_checkpoints/
+
+# --- python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# --- os ---
+.DS_Store
+Thumbs.db
+
+# NOTE: results/*.txt, poster/*.pdf, report/*.pdf are deliverables and ARE tracked.
