@@ -29,7 +29,7 @@ def main() -> None:
 
     first = runs[0]
     lines = [
-        "# M1 — FinBERT reproduction on Financial PhraseBank",
+        "# M1 - FinBERT reproduction on Financial PhraseBank",
         "",
         f"Corpus: Financial PhraseBank `{first['agreement']}` (Malo et al. 2014). "
         f"Deterministic stratified split, seed {first['seed']}: "
@@ -41,13 +41,19 @@ def main() -> None:
     ]
     for r in runs:
         m = r["metrics"]
-        train = f"{r['train_seconds'] / 60:.1f} min" if r.get("train_seconds") else "—"
+        secs = r.get("train_seconds")
+        if not secs:
+            train = "n/a"
+        elif secs < 60:
+            train = f"{secs:.1f} s"
+        else:
+            train = f"{secs / 60:.1f} min"
         ms = r["infer_seconds"] / r["n_test"] * 1000 if r.get("infer_seconds") else None
         lines.append(
             f"| `{r['arm']}` | {r['model']} | {m['accuracy']:.4f} | {m['macro_f1']:.4f} | "
-            f"{m['weighted_f1']:.4f} | {train} | {ms:.1f} |" if ms is not None else
+            f"{m['weighted_f1']:.4f} | {train} | {ms:.2f} |" if ms is not None else
             f"| `{r['arm']}` | {r['model']} | {m['accuracy']:.4f} | {m['macro_f1']:.4f} | "
-            f"{m['weighted_f1']:.4f} | {train} | — |"
+            f"{m['weighted_f1']:.4f} | {train} | n/a |"
         )
 
     notes = [r for r in runs if r.get("notes")]

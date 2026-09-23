@@ -65,7 +65,7 @@ anyway. The framing question: **does more context improve impact prediction, and
 Early-stage. This repo is being built as incremental commits; **results are not yet populated** — the sections
 below fill in as milestones complete. No results are reported until the corresponding step is done.
 
-- [ ] M1 — Reproduce FinBERT on Financial PhraseBank
+- [x] M1 — Reproduce FinBERT on Financial PhraseBank → [`results/m1_summary.md`](results/m1_summary.md)
 - [ ] M2 — Teacher-label a public news sample
 - [ ] M3 — Distill the FinBERT student; measure fidelity
 - [ ] M4 — Cost / latency vs. baselines
@@ -74,8 +74,29 @@ below fill in as milestones complete. No results are reported until the correspo
 - [ ] M7 — Poster, report, repo polish
 
 ## Reproduction
-*(Will be filled in as `code/` lands. Python 3.11+; CPU for prep, free Colab GPU for training. Keys, if any, are
-read from an external `.env` and never committed.)*
+Python 3.11+; CPU for prep, free Colab GPU for training. Keys, if any, are read from an external `.env` and
+never committed. Raw data downloads to `data/raw/` on first run and is git-ignored.
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install torch --index-url https://download.pytorch.org/whl/cpu   # CPU-only box
+.venv/Scripts/python -m pip install -r requirements.txt
+
+python code/phrasebank.py                        # fetch Financial PhraseBank, print class balance
+python code/m1_reproduce.py --arm baseline       # TF-IDF + logistic regression
+python code/m1_reproduce.py --arm finetune --model bert-base-uncased
+python code/m1_reproduce.py --arm finetune --model yiyanghkust/finbert-pretrain
+python code/m1_summary.py                        # rebuild results/m1_summary.md
+```
+
+After the first run everything is cached locally and the pipeline needs no network.
+The two fine-tunes take ~72 min each on a 4-thread CPU; minutes on a GPU.
+
+### M1 result
+Fine-tuned FinBERT reaches **0.870 accuracy / 0.861 macro-F1** on a held-out split of the 50%-agreement
+corpus, reproducing the BERT-class numbers Araci (2019) reports, and beating a TF-IDF + logistic-regression
+baseline by **9.5 macro-F1 points** — the transformer earns its complexity. Full table, per-class breakdown
+and the contamination caveat on the off-the-shelf checkpoint: [`results/m1_summary.md`](results/m1_summary.md).
 
 ## Repo layout
 ```
