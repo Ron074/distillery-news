@@ -1,0 +1,25 @@
+========================================================================
+M1 - Financial PhraseBank (50agree)  |  arm: finetune
+model: bert-base-uncased
+run:   2026-09-23T00:14:58+00:00  seed=42  device=cpu
+========================================================================
+
+test n = 483   (train 3874 / val 483)
+
+  accuracy     0.8675
+  macro F1     0.8585
+  weighted F1  0.8679
+
+per class:
+  label         prec     rec      f1      n
+  negative    0.8947  0.8500  0.8718     60
+  neutral     0.8982  0.8920  0.8951    287
+  positive    0.7943  0.8235  0.8087    136
+
+confusion matrix (rows = true, cols = pred; order: negative, neutral, positive):
+  negative      51     6     3
+  neutral        5   256    26
+  positive       1    23   112
+
+train wall-clock: 4389.5s over 4 epochs
+inference: 24.10s for 483 sentences (49.90 ms/sentence)
