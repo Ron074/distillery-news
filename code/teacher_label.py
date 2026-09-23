@@ -92,6 +92,58 @@ def load_sample(path: Path, limit: int | None) -> pd.DataFrame:
     return df.head(limit) if limit else df
 
 
+DUP_SUFFIX = "_dup"
+
+
+def mode_export_gold(args) -> None:
+    """Write the pilot headlines with blank label columns, for hand-labeling before seeing the teacher."""
+    data_dir = args.data_dir or default_data_dir()
+    df = load_sample(args.sample, args.limit)
+
+    out = df[["uid", "Date", "Stock_symbol", "Article_title"]].copy()
+    for column in ("category", "materiality", "direction"):
+        out[column] = ""
+
+    gold_dir = data_dir / "gold"
+    gold_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = gold_dir / f"gold_blank_{args.tag}.csv"
+    out.to_csv(csv_path, index=False)
+
+    key_path = gold_dir / "labeling_key.txt"
+    key_path.write_text(
+        "Fill category / materiality / direction for each row, then save.\n"
+        "Do this BEFORE looking at any teacher labels - the comparison is only\n"
+        "meaningful if your judgement was formed independently.\n\n"
+        f"category    : {', '.join(taxonomy.CATEGORIES)}\n"
+        f"materiality : {', '.join(taxonomy.MATERIALITY)}\n"
+        f"direction   : {', '.join(taxonomy.DIRECTION)}\n\n"
+        + taxonomy.SYSTEM_PROMPT,
+        encoding="utf-8",
+    )
+    print(f"wrote {csv_path}  ({len(out):,} rows to label)")
+    print(f"wrote {key_path}  (the definitions, so you need not switch windows)")
+
+
+def report_consistency(path: Path) -> None:
+    """Compare any headline the teacher was asked about twice."""
+    if not path.exists():
+        return
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    by_uid = {r["uid"]: r for r in rows}
+    pairs = [(by_uid[u[: -len(DUP_SUFFIX)]], by_uid[u])
+             for u in by_uid if u.endswith(DUP_SUFFIX) and u[: -len(DUP_SUFFIX)] in by_uid]
+    if not pairs:
+        return
+
+    fields = ("category", "materiality", "direction")
+    agree = {f: sum(a[f] == b[f] for a, b in pairs) for f in fields}
+    all_three = sum(all(a[f] == b[f] for f in fields) for a, b in pairs)
+    print(f"\nteacher self-consistency over {len(pairs)} repeated headlines:")
+    for f in fields:
+        print(f"  {f:12s} {agree[f] / len(pairs):6.1%}")
+    print(f"  {'all three':12s} {all_three / len(pairs):6.1%}   <- ceiling on student fidelity")
+
+
 def labels_path(data_dir: Path, tag: str) -> Path:
     return data_dir / "labels" / f"teacher_{tag}.jsonl"
 
@@ -168,6 +220,14 @@ def mode_submit(args) -> None:
     if todo.empty:
         print("nothing to do")
         return
+    if args.duplicates:
+        # Opus 5 has no temperature control, so run-to-run variation cannot be switched off.
+        # Asking about the same headlines twice measures it, and that is the ceiling on fidelity.
+        dup = todo.head(args.duplicates).copy()
+        dup["uid"] = dup["uid"] + DUP_SUFFIX
+        todo = pd.concat([todo, dup], ignore_index=True)
+        print(f"including {len(dup)} repeated headlines to measure teacher self-consistency")
+
     if len(todo) > 100_000:
         raise SystemExit("a single batch takes at most 100,000 requests; split the sample")
 
@@ -275,6 +335,7 @@ def mode_collect(args) -> None:
         print(f"per item      : ${cost / written:.6f}")
         for n in (20_000, 50_000):
             print(f"extrapolated to {n:,}: ${cost / written * n:,.2f}")
+    report_consistency(out_path)
 
 
 def main() -> None:
@@ -298,7 +359,15 @@ def main() -> None:
     p_sub.add_argument("--limit", type=int, default=None)
     p_sub.add_argument("--tag", required=True)
     p_sub.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
+    p_sub.add_argument("--duplicates", type=int, default=0,
+                       help="also ask about this many headlines twice, to measure teacher self-consistency")
     common(p_sub)
+
+    p_gold = sub.add_parser("export-gold", help="write blank label sheets for hand-labeling; spends nothing")
+    p_gold.add_argument("--sample", type=Path, required=True)
+    p_gold.add_argument("--limit", type=int, default=200)
+    p_gold.add_argument("--tag", default="pilot")
+    common(p_gold)
 
     p_col = sub.add_parser("collect", help="poll a submitted batch and write its labels")
     p_col.add_argument("--tag", required=True)
@@ -308,7 +377,8 @@ def main() -> None:
 
     args = ap.parse_args()
     load_dotenv(Path(__file__).resolve().parent.parent)
-    {"estimate": mode_estimate, "submit": mode_submit, "collect": mode_collect}[args.mode](args)
+    {"estimate": mode_estimate, "submit": mode_submit, "collect": mode_collect,
+     "export-gold": mode_export_gold}[args.mode](args)
 
 
 if __name__ == "__main__":

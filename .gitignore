@@ -12,6 +12,7 @@ data/raw/
 data/wrds/
 data/samples/
 data/labels/
+data/gold/
 
 # --- model artifacts / checkpoints (large) ---
 *.pt
