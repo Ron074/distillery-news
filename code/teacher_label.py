@@ -100,8 +100,9 @@ def mode_export_gold(args) -> None:
     data_dir = args.data_dir or default_data_dir()
     df = load_sample(args.sample, args.limit)
 
+    fields = [f.strip() for f in args.fields.split(",") if f.strip()]
     out = df[["uid", "Date", "Stock_symbol", "Article_title"]].copy()
-    for column in ("category", "materiality", "direction"):
+    for column in fields:
         out[column] = ""
 
     gold_dir = data_dir / "gold"
@@ -109,15 +110,17 @@ def mode_export_gold(args) -> None:
     csv_path = gold_dir / f"gold_blank_{args.tag}.csv"
     out.to_csv(csv_path, index=False)
 
+    allowed = {"category": taxonomy.CATEGORIES, "materiality": taxonomy.MATERIALITY,
+               "direction": taxonomy.DIRECTION}
     key_path = gold_dir / "labeling_key.txt"
     key_path.write_text(
-        "Fill category / materiality / direction for each row, then save.\n"
+        f"Fill {' / '.join(fields)} for each row, then save.\n"
         "Do this BEFORE looking at any teacher labels - the comparison is only\n"
-        "meaningful if your judgement was formed independently.\n\n"
-        f"category    : {', '.join(taxonomy.CATEGORIES)}\n"
-        f"materiality : {', '.join(taxonomy.MATERIALITY)}\n"
-        f"direction   : {', '.join(taxonomy.DIRECTION)}\n\n"
-        + taxonomy.SYSTEM_PROMPT,
+        "meaningful if your judgement was formed independently.\n"
+        "Unsure on a row? Write 'unsure' rather than guessing; those are excluded,\n"
+        "and which rows are hard is itself a finding worth reporting.\n\n"
+        + "".join(f"{f:12s}: {', '.join(allowed[f])}\n" for f in fields if f in allowed)
+        + "\n" + taxonomy.SYSTEM_PROMPT,
         encoding="utf-8",
     )
     print(f"wrote {csv_path}  ({len(out):,} rows to label)")
@@ -365,8 +368,10 @@ def main() -> None:
 
     p_gold = sub.add_parser("export-gold", help="write blank label sheets for hand-labeling; spends nothing")
     p_gold.add_argument("--sample", type=Path, required=True)
-    p_gold.add_argument("--limit", type=int, default=200)
+    p_gold.add_argument("--limit", type=int, default=100)
     p_gold.add_argument("--tag", default="pilot")
+    p_gold.add_argument("--fields", default="category,materiality",
+                        help="comma-separated label columns to leave blank for hand-labeling")
     common(p_gold)
 
     p_col = sub.add_parser("collect", help="poll a submitted batch and write its labels")
