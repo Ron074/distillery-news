@@ -67,7 +67,7 @@ below fill in as milestones complete. No results are reported until the correspo
 
 - [x] M1 — Reproduce FinBERT on Financial PhraseBank → [`results/m1_summary.md`](results/m1_summary.md)
 - [x] M2 — Teacher-label a public news sample → [`results/m2_summary.md`](results/m2_summary.md)
-- [ ] M3 — Distill the FinBERT student; measure fidelity
+- [x] M3 — Distill the FinBERT student; measure fidelity → [`results/m3_summary.md`](results/m3_summary.md)
 - [ ] M4 — Cost / latency vs. baselines
 - [ ] M5 — Downstream check against real moves
 - [ ] M6 — Full-article vs. headline ablation
@@ -124,6 +124,14 @@ fields over 500 repeated headlines — the ceiling on any student's fidelity. Ag
 **68.4%** of `earnings`-tagged headlines fall within two days of a real quarterly report date versus 13.8%
 for everything else, a **4.97× lift**. Full distribution and the planned time-based split:
 [`results/m2_summary.md`](results/m2_summary.md).
+
+### M3 result
+The distilled student reproduces the teacher at **0.861 accuracy on `category`** over a held-out
+*time* period (2019–2020) it never trained on, against a **93.0% teacher self-consistency ceiling** —
+capturing 75% of the reachable gap above a majority-class baseline. It catches **79% of
+high-materiality headlines**, the rarest and most important class. It runs at **2.5 ms/headline for
+$0** against **$1.14 per 1,000** for the teacher. Learning curve, ablations and the precision/recall
+trade-off: [`results/m3_summary.md`](results/m3_summary.md).
 
 ## Repo layout
 ```
