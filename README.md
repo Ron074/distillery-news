@@ -89,14 +89,41 @@ python code/m1_reproduce.py --arm finetune --model yiyanghkust/finbert-pretrain
 python code/m1_summary.py                        # rebuild results/m1_summary.md
 ```
 
-After the first run everything is cached locally and the pipeline needs no network.
+After the first run everything is cached locally and M1 needs no network.
 The two fine-tunes take ~72 min each on a 4-thread CPU; minutes on a GPU.
+
+M2 calls a paid API, so it reads a key from an external `.env` and always estimates before spending:
+
+```bash
+python code/fnspid.py --n 50000                                  # sample FNSPID (downloads ~5.7 GB once)
+python code/fnspid.py --filter-sample data/samples/<sample>.csv  # drop template roundups
+python code/teacher_label.py estimate --sample data/samples/<clean>.csv   # free: counts tokens only
+python code/teacher_label.py submit   --sample data/samples/<clean>.csv --tag full --duplicates 500
+python code/teacher_label.py collect  --tag full --wait
+python code/m2_summary.py --sample data/samples/<clean>.csv      # rebuild results/m2_summary.md
+```
+
+`submit` skips any headline already labelled, so an interrupted or unfunded run resumes rather than
+re-paying. `--duplicates` re-asks about N headlines to measure teacher self-consistency, which is the
+ceiling on student fidelity. Validation against external records needs WRDS access:
+
+```bash
+python code/validate_teacher.py earnings --tag full --sample data/samples/<clean>.csv --wrds-dir <path>
+```
 
 ### M1 result
 Fine-tuned FinBERT reaches **0.870 accuracy / 0.861 macro-F1** on a held-out split of the 50%-agreement
 corpus, reproducing the BERT-class numbers Araci (2019) reports, and beating a TF-IDF + logistic-regression
 baseline by **9.5 macro-F1 points** — the transformer earns its complexity. Full table, per-class breakdown
 and the contamination caveat on the off-the-shelf checkpoint: [`results/m1_summary.md`](results/m1_summary.md).
+
+### M2 result
+**43,296 headlines** (2009–2020, 5,223 tickers) labelled by `claude-opus-5` across 10 categories, three
+materiality tiers and three directions. The teacher agrees with itself **93.0%** of the time on all three
+fields over 500 repeated headlines — the ceiling on any student's fidelity. Against outside records,
+**68.4%** of `earnings`-tagged headlines fall within two days of a real quarterly report date versus 13.8%
+for everything else, a **4.97× lift**. Full distribution and the planned time-based split:
+[`results/m2_summary.md`](results/m2_summary.md).
 
 ## Repo layout
 ```
