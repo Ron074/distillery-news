@@ -66,7 +66,7 @@ Early-stage. This repo is being built as incremental commits; **results are not 
 below fill in as milestones complete. No results are reported until the corresponding step is done.
 
 - [x] M1 — Reproduce FinBERT on Financial PhraseBank → [`results/m1_summary.md`](results/m1_summary.md)
-- [ ] M2 — Teacher-label a public news sample
+- [x] M2 — Teacher-label a public news sample → [`results/m2_summary.md`](results/m2_summary.md)
 - [ ] M3 — Distill the FinBERT student; measure fidelity
 - [ ] M4 — Cost / latency vs. baselines
 - [ ] M5 — Downstream check against real moves
