@@ -1,0 +1,55 @@
+{
+  "check": "materiality",
+  "tag": "full",
+  "n_joined": 40442,
+  "by_tier": {
+    "high": {
+      "n": 1399,
+      "median_abs_ret": 2.5888999999999998,
+      "mean_abs_ret": 7.104005503931379
+    },
+    "low": {
+      "n": 26832,
+      "median_abs_ret": 1.2195,
+      "mean_abs_ret": 2.703224809928444
+    },
+    "medium": {
+      "n": 12211,
+      "median_abs_ret": 1.6522,
+      "mean_abs_ret": 3.2760483662271724
+    }
+  },
+  "by_cap_band": {
+    "nano <50M": {
+      "low": 2.0288000000000004,
+      "medium": 3.69395,
+      "high": 8.0034,
+      "n_high": 74
+    },
+    "micro": {
+      "low": 1.5927,
+      "medium": 2.3077,
+      "high": 5.5832,
+      "n_high": 143
+    },
+    "small": {
+      "low": 1.469,
+      "medium": 1.8661,
+      "high": 3.5806999999999998,
+      "n_high": 370
+    },
+    "mid": {
+      "low": 1.20085,
+      "medium": 1.4493,
+      "high": 2.5427,
+      "n_high": 401
+    },
+    "large": {
+      "low": 0.9513499999999999,
+      "medium": 1.2024500000000002,
+      "high": 1.3473000000000002,
+      "n_high": 411
+    }
+  },
+  "mannwhitney_p_high_gt_low": 8.296853936026648e-79
+}
