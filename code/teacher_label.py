@@ -165,14 +165,20 @@ def batch_state_path(data_dir: Path, tag: str) -> Path:
 
 
 def done_uids(path: Path) -> set[str]:
+    """Uids already saved. Tolerates a truncated final line: a connection dropped mid-write leaves
+    one, and refusing to parse it would strand every label already paid for behind a crash."""
     if not path.exists():
         return set()
     uids = set()
     with open(path, encoding="utf-8") as fh:
-        for line in fh:
+        for n, line in enumerate(fh, start=1):
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 uids.add(json.loads(line)["uid"])
+            except (json.JSONDecodeError, KeyError):
+                print(f"  skipping unreadable line {n} in {path.name} (it will be re-requested)")
     return uids
 
 
