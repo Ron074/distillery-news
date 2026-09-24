@@ -12,5 +12,5 @@
 torch>=2.4
 transformers>=4.46
 scikit-learn>=1.4
-pandas>=2.2
+pandas>=2.2,<3    # pandas 3.x binaries were blocked by Windows Application Control on the dev machine
 numpy>=1.26
