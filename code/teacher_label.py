@@ -107,7 +107,22 @@ DUP_SUFFIX = "_dup"
 def mode_export_gold(args) -> None:
     """Write the pilot headlines with blank label columns, for hand-labeling before seeing the teacher."""
     data_dir = args.data_dir or default_data_dir()
-    df = load_sample(args.sample, args.limit, args.offset)
+    # Load the whole pool before narrowing: truncating first and shuffling after would just
+    # reorder an already-biased slice.
+    df = load_sample(args.sample, None if args.shuffle else args.limit, args.offset)
+
+    if args.labeled_tag:
+        # A gold row the teacher never labeled cannot be compared against anything.
+        labeled = done_uids(labels_path(data_dir, args.labeled_tag))
+        if not labeled:
+            raise SystemExit(f"no labels found for tag '{args.labeled_tag}'")
+        df = df[df["uid"].isin(labeled)]
+        print(f"drawing from {len(df):,} rows labeled under tag '{args.labeled_tag}'")
+
+    if args.shuffle:
+        # The sample file may be in a meaningful order (an early version sorted by date), which
+        # would make the head of it a biased slice rather than a representative one.
+        df = df.sample(frac=1.0, random_state=args.seed).reset_index(drop=True).head(args.limit)
 
     fields = [f.strip() for f in args.fields.split(",") if f.strip()]
     out = df[["uid", "Date", "Stock_symbol", "Article_title"]].copy()
@@ -421,6 +436,11 @@ def main() -> None:
     p_gold.add_argument("--sample", type=Path, required=True)
     p_gold.add_argument("--limit", type=int, default=100)
     p_gold.add_argument("--tag", default="pilot")
+    p_gold.add_argument("--labeled-tag", default=None,
+                        help="restrict to rows already labeled under this run tag, so they compare")
+    p_gold.add_argument("--shuffle", action="store_true",
+                        help="draw the rows at random rather than taking the head of the file")
+    p_gold.add_argument("--seed", type=int, default=42)
     p_gold.add_argument("--fields", default="category,materiality",
                         help="comma-separated label columns to leave blank for hand-labeling")
     common(p_gold)

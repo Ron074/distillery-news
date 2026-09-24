@@ -23,7 +23,11 @@ from pathlib import Path
 
 import pandas as pd
 
-EARNINGS_FILE = "edgar_earnings_dates.csv"
+# Compustat's quarterly report dates. The plan preferred edgar_earnings_dates.csv for being
+# ticker-keyed with no join, but that file turned out to hold 13 tickers - it covered 10 of our
+# 5,223. This one carries its own `tic` column too, so it needs no gvkey join either, and reaches
+# 61% of our tickers across 1.2M announcement dates.
+EARNINGS_FILE = "ccm_rdq.parquet"
 
 
 def default_data_dir() -> Path:
@@ -63,8 +67,9 @@ def check_earnings(args) -> None:
     data_dir = args.data_dir or default_data_dir()
     df = load_labeled(data_dir, args.tag, args.sample)
 
-    ann = pd.read_csv(path, usecols=["ticker", "earnings_date"], dtype=str)
-    ann["ticker"] = ann["ticker"].str.upper().str.strip()
+    ann = pd.read_parquet(path, columns=["tic", "rdq"])
+    ann = ann.rename(columns={"tic": "ticker", "rdq": "earnings_date"})
+    ann["ticker"] = ann["ticker"].astype(str).str.upper().str.strip()
     ann["earnings_date"] = pd.to_datetime(ann["earnings_date"], errors="coerce").dt.normalize()
     ann = ann.dropna(subset=["ticker", "earnings_date"])
     ann = ann[ann["ticker"].isin(set(df["ticker"]))]
@@ -74,7 +79,7 @@ def check_earnings(args) -> None:
 
     # A headline counts as "on an announcement" if a real one falls within +/- window days.
     by_ticker: dict[str, pd.Series] = {t: g["earnings_date"] for t, g in ann.groupby("ticker")}
-    window = pd.Timedelta(days=args.window)
+    window = pd.Timedelta(f"{int(args.window)}D")
 
     def near(row) -> bool | None:
         dates = by_ticker.get(row["ticker"])
@@ -98,7 +103,7 @@ def check_earnings(args) -> None:
 
     print(f"earnings-tag check  (tag={args.tag}, window=+/-{args.window}d)")
     print(f"  labeled headlines           {len(df):,}")
-    print(f"  tickers covered by EDGAR    {covered['ticker'].nunique():,} "
+    print(f"  tickers covered by rdq      {covered['ticker'].nunique():,} "
           f"({len(covered):,} of {len(df):,} headlines)")
     print(f"  tagged 'earnings'           {len(tagged):,}")
     print()

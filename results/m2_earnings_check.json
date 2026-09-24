@@ -1,0 +1,11 @@
+{
+  "check": "earnings",
+  "tag": "main",
+  "window_days": 2,
+  "n_labeled": 20000,
+  "n_covered": 14417,
+  "n_tagged": 2313,
+  "hit_rate_tagged": 0.6195417207090359,
+  "hit_rate_other": 0.14309319233311302,
+  "lift": 4.3296379835231935
+}

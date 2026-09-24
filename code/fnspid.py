@@ -108,7 +108,11 @@ def sample(csv_path: Path, n: int, seed: int, chunksize: int = 200_000) -> pd.Da
             print(f"  scanned {seen:,} rows ({kept_eligible:,} eligible)", flush=True)
 
     print(f"scanned {seen:,} rows, {kept_eligible:,} eligible, sampled {len(best_rows):,}")
-    out = best_rows.sort_values("Date").reset_index(drop=True)
+    # Shuffled, NOT sorted by date. An earlier version sorted here, which quietly made every
+    # --limit N a chronological prefix: a 20k run covered 2009-2016 and never saw 2017-2020, and
+    # pilots drawn from the head measured the 2009 era rather than the corpus. Random order means
+    # any prefix is a representative sample.
+    out = best_rows.sample(frac=1.0, random_state=seed).reset_index(drop=True)
     out.insert(0, "uid", pd.util.hash_pandas_object(out["Url"].fillna(out["Article_title"]),
                                                     index=False).astype("uint64").map(lambda v: f"h{v:016x}"))
     return out
