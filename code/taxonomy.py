@@ -9,7 +9,7 @@ from __future__ import annotations
 
 CATEGORIES = [
     "merger", "dilution", "clinical", "earnings", "contract",
-    "guidance", "legal", "insider", "other",
+    "guidance", "legal", "insider", "analyst", "other",
 ]
 MATERIALITY = ["low", "medium", "high"]
 DIRECTION = ["bull", "bear", "neutral"]
@@ -25,15 +25,21 @@ earnings  - reported financial results for a period: revenue, EPS, margins, quar
             results, preliminary results, restatements.
 contract  - commercial awards and partnerships: contracts won or lost, purchase orders, licensing,
             distribution and supply agreements, government awards.
-guidance  - forward-looking company statements not tied to a reported period: outlook, forecasts,
-            raised/lowered guidance, capital-allocation plans, buybacks, dividends, splits.
+guidance  - forward-looking statements BY THE COMPANY, not tied to a reported period: outlook,
+            forecasts, raised/lowered/withdrawn guidance, and capital-allocation decisions -
+            buybacks, dividend declarations and changes, stock splits and reverse splits.
 legal     - litigation, lawsuits, settlements, investigations, subpoenas, enforcement actions,
-            regulatory non-compliance, delisting notices.
+            regulatory non-compliance, delisting notices, bankruptcy filings, Chapter 11,
+            restructuring and going-concern warnings.
 insider   - transactions or changes involving insiders and large holders: officer/director buys
-            and sells, 13D/13G stakes, executive appointments and departures.
+            and sells, 13D/13G stakes, activist positions, executive appointments and departures.
+analyst   - third-party assessments BY OUTSIDERS, not by the company: broker upgrades and
+            downgrades, initiations and reinstatements of coverage, rating changes, price-target
+            changes, and published short-seller reports. The distinction from guidance is who is
+            speaking - the company itself is guidance, an outside firm is analyst.
 other     - anything else, including index roundups, aggregated "biggest movers" lists, reactive
-            coverage of a move that has already happened, conference appearances, and general
-            market commentary."""
+            coverage of a move that has already happened, conference appearances, index additions
+            and deletions, product launches, and general market commentary."""
 
 MATERIALITY_DEFINITIONS = """\
 high   - a reasonable investor would expect this to move the stock materially on its own:
