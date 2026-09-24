@@ -70,25 +70,33 @@ def build_client():
     return anthropic.Anthropic()
 
 
-def request_params(headline: str, model: str, effort: str, max_tokens: int) -> dict:
+def request_params(headline: str, model: str, effort: str, max_tokens: int,
+                   cache_ttl: str = "1h") -> dict:
+    # A long batch outlives the default 5-minute cache entry, and a rebuilt cache is billed at
+    # 1.25x input where a read is 0.1x. One pilot rebuilt the prefix ~84 times and cache writes
+    # became 69% of its bill, so the lifetime is set explicitly rather than left to the default.
+    cache_control = {"type": "ephemeral"}
+    if cache_ttl:
+        cache_control["ttl"] = cache_ttl
     return {
         "model": model,
         "max_tokens": max_tokens,
         "system": [{
             "type": "text",
             "text": taxonomy.SYSTEM_PROMPT,
-            "cache_control": {"type": "ephemeral"},
+            "cache_control": cache_control,
         }],
         "messages": [{"role": "user", "content": headline}],
         "output_config": {"format": taxonomy.OUTPUT_CONFIG_FORMAT, "effort": effort},
     }
 
 
-def load_sample(path: Path, limit: int | None) -> pd.DataFrame:
+def load_sample(path: Path, limit: int | None, offset: int = 0) -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str)
     missing = {"uid", "Article_title"} - set(df.columns)
     if missing:
         raise SystemExit(f"{path} is missing required columns: {sorted(missing)}")
+    df = df.iloc[offset:]
     return df.head(limit) if limit else df
 
 
@@ -98,7 +106,7 @@ DUP_SUFFIX = "_dup"
 def mode_export_gold(args) -> None:
     """Write the pilot headlines with blank label columns, for hand-labeling before seeing the teacher."""
     data_dir = args.data_dir or default_data_dir()
-    df = load_sample(args.sample, args.limit)
+    df = load_sample(args.sample, args.limit, args.offset)
 
     fields = [f.strip() for f in args.fields.split(",") if f.strip()]
     out = df[["uid", "Date", "Stock_symbol", "Article_title"]].copy()
@@ -171,12 +179,12 @@ def done_uids(path: Path) -> set[str]:
 
 def mode_estimate(args) -> None:
     client = build_client()
-    df = load_sample(args.sample, args.limit)
+    df = load_sample(args.sample, args.limit, args.offset)
     probe = df["Article_title"].head(args.probe).tolist()
 
     counted = []
     for headline in probe:
-        params = request_params(headline, args.model, args.effort, args.max_tokens)
+        params = request_params(headline, args.model, args.effort, args.max_tokens, args.cache_ttl)
         resp = client.messages.count_tokens(
             model=args.model, system=params["system"], messages=params["messages"]
         )
@@ -214,7 +222,7 @@ def mode_submit(args) -> None:
 
     client = build_client()
     data_dir = args.data_dir or default_data_dir()
-    df = load_sample(args.sample, args.limit)
+    df = load_sample(args.sample, args.limit, args.offset)
 
     already = done_uids(labels_path(data_dir, args.tag))
     todo = df[~df["uid"].isin(already)]
@@ -238,7 +246,7 @@ def mode_submit(args) -> None:
         Request(
             custom_id=row.uid,
             params=MessageCreateParamsNonStreaming(
-                **request_params(row.Article_title, args.model, args.effort, args.max_tokens)
+                **request_params(row.Article_title, args.model, args.effort, args.max_tokens, args.cache_ttl)
             ),
         )
         for row in todo.itertuples()
@@ -350,6 +358,10 @@ def main() -> None:
         p.add_argument("--effort", default="low", choices=["low", "medium", "high", "xhigh", "max"])
         p.add_argument("--max-tokens", type=int, default=2048)
         p.add_argument("--data-dir", type=Path, default=None)
+        p.add_argument("--cache-ttl", default="1h",
+                       help="cache lifetime for the shared taxonomy prefix; empty string for the 5m default")
+        p.add_argument("--offset", type=int, default=0,
+                       help="skip this many rows first, to draw a slice not already labeled")
 
     p_est = sub.add_parser("estimate", help="count tokens and bracket the cost; spends nothing")
     p_est.add_argument("--sample", type=Path, required=True)
