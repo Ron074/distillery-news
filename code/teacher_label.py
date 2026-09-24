@@ -289,8 +289,22 @@ def mode_collect(args) -> None:
     state = json.loads(state_path.read_text(encoding="utf-8"))
     batch_id = state["batch_id"]
 
+    import anthropic
+
+    # The batch runs server-side, so losing the network is a pause, not a failure. Sleeping
+    # through a disconnection lets an unattended collector finish on its own once a laptop is
+    # back online, instead of dying minutes after it is unplugged.
+    offline_for = 0
     while True:
-        batch = client.messages.batches.retrieve(batch_id)
+        try:
+            batch = client.messages.batches.retrieve(batch_id)
+        except (anthropic.APIConnectionError, anthropic.APITimeoutError):
+            offline_for += args.poll_seconds
+            print(f"no connection; retrying in {args.poll_seconds}s "
+                  f"(offline {offline_for // 60}m so far)", flush=True)
+            time.sleep(args.poll_seconds)
+            continue
+        offline_for = 0
         if batch.processing_status == "ended":
             break
         counts = batch.request_counts
@@ -307,38 +321,44 @@ def mode_collect(args) -> None:
 
     usage = {"input": 0, "cache_read": 0, "write_5m": 0, "write_1h": 0, "output": 0}
     written = errored = skipped = 0
-    with open(out_path, "a", encoding="utf-8") as fh:
-        for result in client.messages.batches.results(batch_id):
-            if result.custom_id in already:
-                skipped += 1
-                continue
-            if result.result.type != "succeeded":
-                errored += 1
-                continue
-            msg = result.result.message
-            text = next((b.text for b in msg.content if b.type == "text"), None)
-            if text is None:
-                errored += 1
-                continue
-            try:
-                label = json.loads(text)
-            except json.JSONDecodeError:
-                errored += 1
-                continue
-            usage["input"] += msg.usage.input_tokens
-            usage["output"] += msg.usage.output_tokens
-            usage["cache_read"] += msg.usage.cache_read_input_tokens or 0
-            # Writes are priced by lifetime, so split them rather than assuming one rate.
-            breakdown = getattr(msg.usage, "cache_creation", None)
-            if breakdown is not None:
-                usage["write_5m"] += getattr(breakdown, "ephemeral_5m_input_tokens", 0) or 0
-                usage["write_1h"] += getattr(breakdown, "ephemeral_1h_input_tokens", 0) or 0
-            else:
-                key = "write_1h" if state.get("cache_ttl") == "1h" else "write_5m"
-                usage[key] += msg.usage.cache_creation_input_tokens or 0
-            fh.write(json.dumps({"uid": result.custom_id, **label,
-                                 "model": state["model"], "effort": state["effort"]}) + "\n")
-            written += 1
+    interrupted = None
+    try:
+        with open(out_path, "a", encoding="utf-8") as fh:
+            for result in client.messages.batches.results(batch_id):
+                if result.custom_id in already:
+                    skipped += 1
+                    continue
+                if result.result.type != "succeeded":
+                    errored += 1
+                    continue
+                msg = result.result.message
+                text = next((b.text for b in msg.content if b.type == "text"), None)
+                if text is None:
+                    errored += 1
+                    continue
+                try:
+                    label = json.loads(text)
+                except json.JSONDecodeError:
+                    errored += 1
+                    continue
+                usage["input"] += msg.usage.input_tokens
+                usage["output"] += msg.usage.output_tokens
+                usage["cache_read"] += msg.usage.cache_read_input_tokens or 0
+                # Writes are priced by lifetime, so split them rather than assuming one rate.
+                breakdown = getattr(msg.usage, "cache_creation", None)
+                if breakdown is not None:
+                    usage["write_5m"] += getattr(breakdown, "ephemeral_5m_input_tokens", 0) or 0
+                    usage["write_1h"] += getattr(breakdown, "ephemeral_1h_input_tokens", 0) or 0
+                else:
+                    key = "write_1h" if state.get("cache_ttl") == "1h" else "write_5m"
+                    usage[key] += msg.usage.cache_creation_input_tokens or 0
+                fh.write(json.dumps({"uid": result.custom_id, **label,
+                                     "model": state["model"], "effort": state["effort"]}) + "\n")
+                fh.flush()
+                written += 1
+    except (anthropic.APIConnectionError, anthropic.APITimeoutError) as exc:
+        # Every label written so far is on disk; re-running resumes from there.
+        interrupted = exc
 
     in_rate, out_rate = PRICES.get(state["model"], PRICES["claude-opus-5"])
     cost = (
@@ -350,6 +370,9 @@ def mode_collect(args) -> None:
     ) / 1e6 * BATCH_DISCOUNT
 
     print(f"\nwrote {written:,} labels -> {out_path}")
+    if interrupted is not None:
+        print(f"*** connection lost mid-download ({type(interrupted).__name__}) ***")
+        print(f"    {written:,} labels are saved; re-run this same command to fetch the rest")
     if skipped:
         print(f"skipped {skipped:,} already present")
     if errored:
