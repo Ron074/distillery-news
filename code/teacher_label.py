@@ -29,8 +29,8 @@ import pandas as pd
 
 import taxonomy
 
-# Published per-MTok rates. Batch is half price; cache reads are a tenth of the input rate and
-# cache writes 1.25x. Verify against anthropic.com/pricing before quoting a number in the report.
+# Published per-MTok rates. Batch is half price; cache reads are a tenth of the input rate.
+# Verify against anthropic.com/pricing before quoting a number in the report.
 PRICES = {
     "claude-opus-5": (5.0, 25.0),
     "claude-sonnet-5": (2.0, 10.0),
@@ -38,7 +38,8 @@ PRICES = {
 }
 BATCH_DISCOUNT = 0.5
 CACHE_READ_MULT = 0.1
-CACHE_WRITE_MULT = 1.25
+# A cache write is billed by its lifetime: 1.25x input for the 5-minute default, 2x for 1h.
+CACHE_WRITE_MULT = {"5m": 1.25, "1h": 2.0}
 
 
 def default_data_dir() -> Path:
@@ -71,10 +72,10 @@ def build_client():
 
 
 def request_params(headline: str, model: str, effort: str, max_tokens: int,
-                   cache_ttl: str = "1h") -> dict:
-    # A long batch outlives the default 5-minute cache entry, and a rebuilt cache is billed at
-    # 1.25x input where a read is 0.1x. One pilot rebuilt the prefix ~84 times and cache writes
-    # became 69% of its bill, so the lifetime is set explicitly rather than left to the default.
+                   cache_ttl: str = "") -> dict:
+    # Empty ttl means the 5-minute default, which is what batch traffic wants: requests sharing a
+    # prefix start close together and keep the entry warm on their own. A measured run on "1h"
+    # cost 6x the best 5m run -- the longer lifetime bought nothing and doubled the write price.
     cache_control = {"type": "ephemeral"}
     if cache_ttl:
         cache_control["ttl"] = cache_ttl
@@ -264,6 +265,7 @@ def mode_submit(args) -> None:
     state_path.write_text(json.dumps({
         "batch_id": batch.id, "tag": args.tag, "model": args.model, "effort": args.effort,
         "n_requests": len(requests), "sample": str(args.sample),
+        "cache_ttl": args.cache_ttl,
         "created_at": str(batch.created_at),
     }, indent=2), encoding="utf-8")
 
@@ -297,7 +299,7 @@ def mode_collect(args) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     already = done_uids(out_path)
 
-    usage = {"input": 0, "cache_read": 0, "cache_write": 0, "output": 0}
+    usage = {"input": 0, "cache_read": 0, "write_5m": 0, "write_1h": 0, "output": 0}
     written = errored = skipped = 0
     with open(out_path, "a", encoding="utf-8") as fh:
         for result in client.messages.batches.results(batch_id):
@@ -320,7 +322,14 @@ def mode_collect(args) -> None:
             usage["input"] += msg.usage.input_tokens
             usage["output"] += msg.usage.output_tokens
             usage["cache_read"] += msg.usage.cache_read_input_tokens or 0
-            usage["cache_write"] += msg.usage.cache_creation_input_tokens or 0
+            # Writes are priced by lifetime, so split them rather than assuming one rate.
+            breakdown = getattr(msg.usage, "cache_creation", None)
+            if breakdown is not None:
+                usage["write_5m"] += getattr(breakdown, "ephemeral_5m_input_tokens", 0) or 0
+                usage["write_1h"] += getattr(breakdown, "ephemeral_1h_input_tokens", 0) or 0
+            else:
+                key = "write_1h" if state.get("cache_ttl") == "1h" else "write_5m"
+                usage[key] += msg.usage.cache_creation_input_tokens or 0
             fh.write(json.dumps({"uid": result.custom_id, **label,
                                  "model": state["model"], "effort": state["effort"]}) + "\n")
             written += 1
@@ -329,7 +338,8 @@ def mode_collect(args) -> None:
     cost = (
         usage["input"] * in_rate
         + usage["cache_read"] * in_rate * CACHE_READ_MULT
-        + usage["cache_write"] * in_rate * CACHE_WRITE_MULT
+        + usage["write_5m"] * in_rate * CACHE_WRITE_MULT["5m"]
+        + usage["write_1h"] * in_rate * CACHE_WRITE_MULT["1h"]
         + usage["output"] * out_rate
     ) / 1e6 * BATCH_DISCOUNT
 
@@ -358,7 +368,7 @@ def main() -> None:
         p.add_argument("--effort", default="low", choices=["low", "medium", "high", "xhigh", "max"])
         p.add_argument("--max-tokens", type=int, default=2048)
         p.add_argument("--data-dir", type=Path, default=None)
-        p.add_argument("--cache-ttl", default="1h",
+        p.add_argument("--cache-ttl", default="",
                        help="cache lifetime for the shared taxonomy prefix; empty string for the 5m default")
         p.add_argument("--offset", type=int, default=0,
                        help="skip this many rows first, to draw a slice not already labeled")
