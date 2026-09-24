@@ -135,6 +135,29 @@ CAP_BANDS = [(0, 50_000, "nano <50M"), (50_000, 300_000, "micro"), (300_000, 2e6
              (2e6, 1e7, "mid"), (1e7, 9e12, "large")]
 
 
+def market_returns(path: Path, start, end) -> pd.Series:
+    """Value-weighted market return per day, from every stock in CRSP (not just ours).
+
+    Raw |return| credits the news for days when the whole market moved - visible in 2020, where
+    every materiality tier jumped together. Subtracting the market leaves the part of the move
+    that is specific to the company.
+    """
+    import pyarrow.parquet as pq
+
+    table = pq.read_table(path, columns=["DlyCalDt", "DlyRet", "DlyCap"],
+                          filters=[("DlyCalDt", ">=", start), ("DlyCalDt", "<=", end)])
+    df = table.to_pandas()
+    df["DlyRet"] = pd.to_numeric(df["DlyRet"], errors="coerce")
+    df["DlyCap"] = pd.to_numeric(df["DlyCap"], errors="coerce")
+    df = df.dropna(subset=["DlyRet", "DlyCap"])
+    df = df[df["DlyCap"] > 0]
+    df["weighted"] = df["DlyRet"] * df["DlyCap"]
+    grouped = df.groupby("DlyCalDt").agg(w=("weighted", "sum"), cap=("DlyCap", "sum"))
+    market = (grouped["w"] / grouped["cap"]).rename("mkt_ret")
+    market.index = pd.to_datetime(market.index).normalize()
+    return market
+
+
 def check_materiality(args) -> None:
     """Does the teacher's materiality tier track how much the stock actually moved?
 
@@ -159,14 +182,26 @@ def check_materiality(args) -> None:
     daily = daily[daily["ticker"].isin(set(df["ticker"]))]
 
     j = df.merge(daily[["ticker", "news_date", "DlyRet", "DlyCap"]], on=["ticker", "news_date"])
-    j["abs_ret"] = j["DlyRet"].astype(float).abs() * 100
-    j["cap"] = j["DlyCap"].astype(float)
-    j = j.dropna(subset=["abs_ret"])
+    j["ret"] = pd.to_numeric(j["DlyRet"], errors="coerce")
+    j["cap"] = pd.to_numeric(j["DlyCap"], errors="coerce")
+    j = j.dropna(subset=["ret"])
+
+    measure = "|return|"
+    if args.market_adjust:
+        mkt = market_returns(path, j["news_date"].min().date(), j["news_date"].max().date())
+        j = j.join(mkt, on="news_date")
+        missing = int(j["mkt_ret"].isna().sum())
+        if missing:
+            print(f"  note: {missing:,} rows had no market return and are dropped")
+        j = j.dropna(subset=["mkt_ret"])
+        j["ret"] = j["ret"] - j["mkt_ret"]
+        measure = "|abnormal return| (market-adjusted)"
+    j["abs_ret"] = j["ret"].abs() * 100
 
     print(f"materiality check  (tag={args.tag})")
     print(f"  headlines joined to a trading day: {len(j):,} of {len(df):,}\n")
     overall = j.groupby("materiality")["abs_ret"].agg(["size", "median", "mean"])
-    print("  median |return| on the news day, by tier:")
+    print(f"  median {measure} on the news day, by tier:")
     for tier in ("low", "medium", "high"):
         if tier in overall.index:
             row = overall.loc[tier]
@@ -197,6 +232,7 @@ def check_materiality(args) -> None:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps({
             "check": "materiality", "tag": args.tag, "n_joined": int(len(j)),
+            "measure": measure,
             "by_tier": {k: {"n": int(v["size"]), "median_abs_ret": float(v["median"]),
                             "mean_abs_ret": float(v["mean"])} for k, v in overall.iterrows()},
             "by_cap_band": bands, "mannwhitney_p_high_gt_low": float(p),
@@ -214,6 +250,9 @@ def main() -> None:
     pm.add_argument("--wrds-dir", type=Path, default=None)
     pm.add_argument("--data-dir", type=Path, default=None)
     pm.add_argument("--min-band", type=int, default=200, help="skip cap bands thinner than this")
+    pm.add_argument("--market-adjust", action="store_true",
+                    help="subtract the value-weighted market return, so a market-wide move is "
+                         "not credited to the news")
     pm.add_argument("--out", type=Path, default=None)
 
     p = sub.add_parser("earnings", help="do 'earnings' tags land on real announcement dates?")
