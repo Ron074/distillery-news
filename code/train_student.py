@@ -177,6 +177,8 @@ def main() -> None:
     ap.add_argument("--data-dir", type=Path, default=None)
     ap.add_argument("--results-dir", type=Path, default=None)
     ap.add_argument("--save-dir", type=Path, default=None)
+    ap.add_argument("--save-predictions", type=Path, default=None,
+                    help="write per-headline student and teacher labels for the test split (M5 needs these)")
     ap.add_argument("--tag", default=None)
     args = ap.parse_args()
 
@@ -263,6 +265,19 @@ def main() -> None:
     t0 = time.perf_counter()
     test_scores = evaluate(model, tokenizer, test, heads, device, args.batch_size, args.max_length)
     infer_seconds = time.perf_counter() - t0
+
+    if args.save_predictions:
+        # M5 joins the student's per-headline calls to realised price moves, which aggregate
+        # metrics cannot support. Saved keyed by uid so it joins back to the corpus.
+        preds = predict(model, tokenizer, test["Article_title"].tolist(), heads, device,
+                        args.batch_size, args.max_length)
+        out = test[["uid"]].copy()
+        for name, names in heads.items():
+            out[f"student_{name}"] = [names[i] for i in preds[name]]
+            out[f"teacher_{name}"] = test[name].values
+        args.save_predictions.parent.mkdir(parents=True, exist_ok=True)
+        out.to_csv(args.save_predictions, index=False)
+        print(f"saved {len(out):,} test predictions -> {args.save_predictions}")
 
     run = {
         "milestone": "M3", "encoder": args.encoder, "heads": list(heads),
