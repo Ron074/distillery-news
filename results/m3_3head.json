@@ -6,6 +6,7 @@
     "materiality",
     "direction"
   ],
+  "null_test": false,
   "labels_tag": "full",
   "seed": 42,
   "epochs": 3,
@@ -20,9 +21,9 @@
     "val_year": 2018,
     "test_from": 2019
   },
-  "train_seconds": 662.540595922,
-  "infer_seconds": 21.162032673999875,
-  "ms_per_headline": 2.4632793241764492,
+  "train_seconds": 648.580677812,
+  "infer_seconds": 19.867936751999878,
+  "ms_per_headline": 2.3126454140379322,
   "device": "cuda",
   "test": {
     "category": {
@@ -179,7 +180,7 @@
       }
     }
   },
-  "teacher_self_consistency_note": "teacher agrees with itself 93.0% on all three fields; that is the ceiling on fidelity",
-  "timestamp": "2026-09-24T22:27:35+00:00",
+  "teacher_self_consistency_note": "teacher agrees with itself 90.8% on all three fields, measured over 500 randomly drawn headlines; that is the ceiling on fidelity",
+  "timestamp": "2026-09-27T22:45:24+00:00",
   "platform": "Linux x86_64 python 3.13.15"
 }

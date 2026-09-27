@@ -130,8 +130,13 @@ The distilled student reproduces the teacher at **0.861 accuracy on `category`**
 *time* period (2019–2020) it never trained on, against a **90.8% teacher self-consistency ceiling** —
 capturing 78% of the reachable gap above a majority-class baseline. It catches **79% of
 high-materiality headlines**, the rarest and most important class. It runs at **2.5 ms/headline for
-$0** against **$1.14 per 1,000** for the teacher. Learning curve, ablations and the precision/recall
-trade-off: [`results/m3_summary.md`](results/m3_summary.md).
+$0** against **$1.14 per 1,000** for the teacher.
+
+Verified two ways rather than self-reported: the metrics are recomputable from saved per-headline
+predictions (match to four decimals), and a **null test** — training labels permuted so no
+headline-label relationship survives — collapses category from 0.861 to **0.116**, near chance for
+ten classes. Learning curve, ablations and the precision/recall trade-off:
+[`results/m3_summary.md`](results/m3_summary.md).
 
 ## Repo layout
 ```

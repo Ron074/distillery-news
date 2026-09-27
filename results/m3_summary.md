@@ -35,7 +35,7 @@ From 20,000 to 26,976 rows, category macro-F1 moves +0.0083 while `high`-materia
 
 | run | category macro-F1 | materiality macro-F1 | high recall | ms/headline |
 |---|---|---|---|---|
-| FinBERT, three heads | 0.8292 | 0.7173 | 0.791 | 2.46 |
+| FinBERT, three heads | 0.8292 | 0.7173 | 0.791 | 2.31 |
 | FinBERT, direction head removed | 0.8383 | 0.7415 | 0.689 | 2.43 |
 | DistilBERT, three heads | 0.7983 | 0.6841 | 0.681 | 1.39 |
 
@@ -43,12 +43,28 @@ Dropping the direction head moves category macro-F1 +0.0090 and materiality macr
 
 **Keep the head.** Removing it makes the summary metrics look slightly better while costing ten points of recall on the class that matters most - the two-head model catches barely two in three high-materiality headlines against four in five. The likely reason is that predicting direction forces the encoder to represent whether news is good or bad, and that representation is what distinguishes a decisive event from a routine one. Chosen on macro-F1 alone, this ablation would have been read as an argument for dropping it.
 
+## Null test - does the pipeline leak?
+
+Every other check here began from a hypothesis about what might be wrong, which can only find faults the author already imagined. This one does not. The training labels are permuted so no headline-label relationship survives, the model is trained at the identical config, and the score must collapse to chance.
+
+| head | real | labels shuffled | majority baseline |
+|---|---|---|---|
+| `category` | 0.8611 | **0.1162** | 0.496 |
+| `materiality` | 0.8716 | **0.5796** | 0.731 |
+| `direction` | 0.8497 | **0.3963** | 0.664 |
+
+Category falls to 11.6% - near chance for ten classes - and `high`-materiality recall from 0.79 to 0.13. This rules out test labels reaching the model through training, evaluation comparing predictions against themselves, and leakage across the split; none of which any accuracy figure would have revealed on its own.
+
+Category and materiality land *below* their majority baselines rather than at them. That is the class weighting behaving correctly: the weighted loss pushes the model toward rare classes, so with no signal it spreads predictions instead of defaulting to the common one. An unweighted model would have parked at the baseline.
+
+Reported metrics were also recomputed independently from the saved per-headline predictions and match to four decimal places on all three heads.
+
 ## Cost and speed
 
 | | per 1,000 headlines |
 |---|---|
 | teacher (`claude-opus-5`, Batch API) | $1.14, plus minutes of queue latency |
-| student on GPU | $0.00, 2.5 s |
+| student on GPU | $0.00, 2.3 s |
 | student on CPU | $0.00, ~45 s |
 
 The student needs no API key and no network. That is the project's headline claim, measured rather than asserted.

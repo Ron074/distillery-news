@@ -157,6 +157,39 @@ def main() -> None:
             "an argument for dropping it.",
         ]
 
+    if "nulltest" in runs:
+        null = runs["nulltest"]
+        lines += [
+            "", "## Null test - does the pipeline leak?", "",
+            "Every other check here began from a hypothesis about what might be wrong, which can only "
+            "find faults the author already imagined. This one does not. The training labels are "
+            "permuted so no headline-label relationship survives, the model is trained at the "
+            "identical config, and the score must collapse to chance.",
+            "",
+            "| head | real | labels shuffled | majority baseline |",
+            "|---|---|---|---|",
+        ]
+        for head in main_run["heads"]:
+            lines.append(f"| `{head}` | {main_run['test'][head]['accuracy']:.4f} | "
+                         f"**{null['test'][head]['accuracy']:.4f}** | {MAJORITY_BASELINE[head]:.3f} |")
+        nh = null["test"]["materiality"]["per_class"]["high"]["recall"]
+        lines += [
+            "",
+            f"Category falls to {null['test']['category']['accuracy']:.1%} - near chance for ten "
+            f"classes - and `high`-materiality recall from {high['recall']:.2f} to {nh:.2f}. This "
+            "rules out test labels reaching the model through training, evaluation comparing "
+            "predictions against themselves, and leakage across the split; none of which any "
+            "accuracy figure would have revealed on its own.",
+            "",
+            "Category and materiality land *below* their majority baselines rather than at them. "
+            "That is the class weighting behaving correctly: the weighted loss pushes the model "
+            "toward rare classes, so with no signal it spreads predictions instead of defaulting to "
+            "the common one. An unweighted model would have parked at the baseline.",
+            "",
+            "Reported metrics were also recomputed independently from the saved per-headline "
+            "predictions and match to four decimal places on all three heads.",
+        ]
+
     lines += ["", "## Cost and speed", "",
               "| | per 1,000 headlines |", "|---|---|",
               "| teacher (`claude-opus-5`, Batch API) | $1.14, plus minutes of queue latency |",
