@@ -257,7 +257,9 @@ def mode_submit(args) -> None:
     if args.duplicates:
         # Opus 5 has no temperature control, so run-to-run variation cannot be switched off.
         # Asking about the same headlines twice measures it, and that is the ceiling on fidelity.
-        dup = todo.head(args.duplicates).copy()
+        # Sampled at random, NOT the head: the corpus is in date order, so head() measured
+        # self-consistency over a handful of consecutive days and called it a corpus figure.
+        dup = todo.sample(n=min(args.duplicates, len(todo)), random_state=args.seed).copy()
         dup["uid"] = dup["uid"] + DUP_SUFFIX
         todo = pd.concat([todo, dup], ignore_index=True)
         print(f"including {len(dup)} repeated headlines to measure teacher self-consistency")
@@ -429,6 +431,7 @@ def main() -> None:
     p_sub.add_argument("--limit", type=int, default=None)
     p_sub.add_argument("--tag", required=True)
     p_sub.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
+    p_sub.add_argument("--seed", type=int, default=42, help="seed for choosing the repeated headlines")
     p_sub.add_argument("--duplicates", type=int, default=0,
                        help="also ask about this many headlines twice, to measure teacher self-consistency")
     common(p_sub)

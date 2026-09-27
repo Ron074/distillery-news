@@ -8,8 +8,9 @@ what would actually be deployed.
     python code/train_student.py --labels full --sample ... --no-direction      # the ablation
     python code/train_student.py --labels full --sample ... --limit 5000        # learning curve
 
-Fidelity here means agreement with the teacher, not correctness. The teacher agrees with itself
-93% of the time, so that is the ceiling - report it beside any fidelity number.
+Fidelity here means agreement with the teacher, not correctness. Asked the same 500 randomly drawn
+headlines twice, the teacher agrees with itself 90.8% of the time - that is the ceiling, and it
+belongs beside any fidelity number.
 
 Designed to run on a free Colab GPU. On CPU it works but takes hours per run.
 """
@@ -289,7 +290,7 @@ def main() -> None:
         "train_seconds": train_seconds, "infer_seconds": infer_seconds,
         "ms_per_headline": infer_seconds / max(len(test), 1) * 1000,
         "device": device, "test": test_scores,
-        "teacher_self_consistency_note": "teacher agrees with itself 93.0% on all three fields; "
+        "teacher_self_consistency_note": "teacher agrees with itself 90.8% on all three fields, measured over 500 randomly drawn headlines; "
                                          "that is the ceiling on fidelity",
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "platform": f"{platform.system()} {platform.machine()} python {platform.python_version()}",

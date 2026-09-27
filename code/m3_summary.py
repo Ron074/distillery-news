@@ -13,9 +13,13 @@ from pathlib import Path
 
 from m1_reproduce import default_results_dir
 
-# Measured in M2 over 500 repeated headlines: how often the teacher agrees with itself. No student
-# can exceed this, so every fidelity number is quoted against it rather than against 100%.
-TEACHER_SELF_CONSISTENCY = {"category": 0.986, "materiality": 0.972, "direction": 0.966}
+# How often the teacher agrees with itself, over 500 headlines drawn at RANDOM from the corpus.
+# No student can exceed this, so every fidelity number is quoted against it rather than 100%.
+# An earlier figure of 93.0% was measured on the first 500 rows of a date-ordered file, i.e. on
+# 2009-2010 alone, where the corpus is mostly commentary and the calls are easier. Re-measured
+# across all twelve years it is 90.8%, and the category component falls furthest.
+TEACHER_SELF_CONSISTENCY = {"category": 0.962, "materiality": 0.974, "direction": 0.970}
+TEACHER_SELF_CONSISTENCY_ALL_THREE = 0.908
 # Share of the test set held by its largest class - what "always guess the common one" scores.
 MAJORITY_BASELINE = {"category": 0.496, "materiality": 0.731, "direction": 0.664}
 
@@ -54,9 +58,10 @@ def main() -> None:
         f"headlines were removed before splitting ({main_run['near_duplicates_dropped']:,} dropped), "
         "so no templated item sits on both sides.",
         "",
-        "**Fidelity means agreement with the teacher, not correctness.** The teacher agrees with "
-        "itself 93.0% of the time across all three fields, so that is the ceiling; a student at 86% "
-        "is closing most of the reachable gap rather than falling 14 points short of perfect.",
+        f"**Fidelity means agreement with the teacher, not correctness.** Asked the same 500 "
+        f"randomly drawn headlines twice, the teacher gives the same answer on all three fields "
+        f"{TEACHER_SELF_CONSISTENCY_ALL_THREE:.1%} of the time. That is the ceiling; a student at "
+        f"86% is closing most of the reachable gap rather than falling 14 points short of perfect.",
         "",
         "## Main model",
         "",

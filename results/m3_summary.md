@@ -2,15 +2,15 @@
 
 One FinBERT encoder with three heads, trained on 26,976 teacher-labelled headlines and tested on **8,591 headlines from 2019 onward** - a period the model never saw. Near-duplicate headlines were removed before splitting (1,776 dropped), so no templated item sits on both sides.
 
-**Fidelity means agreement with the teacher, not correctness.** The teacher agrees with itself 93.0% of the time across all three fields, so that is the ceiling; a student at 86% is closing most of the reachable gap rather than falling 14 points short of perfect.
+**Fidelity means agreement with the teacher, not correctness.** Asked the same 500 randomly drawn headlines twice, the teacher gives the same answer on all three fields 90.8% of the time. That is the ceiling; a student at 86% is closing most of the reachable gap rather than falling 14 points short of perfect.
 
 ## Main model
 
 | head | majority baseline | student accuracy | macro-F1 | teacher self-consistency | share of reachable gap |
 |---|---|---|---|---|---|
-| `category` | 49.6% | **0.8611** | 0.8292 | 98.6% | 75% |
-| `materiality` | 73.1% | **0.8716** | 0.7173 | 97.2% | 58% |
-| `direction` | 66.4% | **0.8497** | 0.8174 | 96.6% | 61% |
+| `category` | 49.6% | **0.8611** | 0.8292 | 96.2% | 78% |
+| `materiality` | 73.1% | **0.8716** | 0.7173 | 97.4% | 58% |
+| `direction` | 66.4% | **0.8497** | 0.8174 | 97.0% | 61% |
 
 **`high` materiality: recall 0.791, precision 0.329** on 235 test examples. It is 3.3% of the corpus and the single class the project exists to predict, so it is reported separately - macro-F1 averages it away, and without class weighting a model that never predicted it would still score well.
 

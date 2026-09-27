@@ -119,16 +119,16 @@ and the contamination caveat on the off-the-shelf checkpoint: [`results/m1_summa
 
 ### M2 result
 **43,296 headlines** (2009–2020, 5,223 tickers) labelled by `claude-opus-5` across 10 categories, three
-materiality tiers and three directions. The teacher agrees with itself **93.0%** of the time on all three
-fields over 500 repeated headlines — the ceiling on any student's fidelity. Against outside records,
+materiality tiers and three directions. Asked the same 500 randomly drawn headlines twice, the teacher gives
+the same answer on all three fields **90.8%** of the time — the ceiling on any student's fidelity. Against outside records,
 **68.4%** of `earnings`-tagged headlines fall within two days of a real quarterly report date versus 13.8%
 for everything else, a **4.97× lift**. Full distribution and the planned time-based split:
 [`results/m2_summary.md`](results/m2_summary.md).
 
 ### M3 result
 The distilled student reproduces the teacher at **0.861 accuracy on `category`** over a held-out
-*time* period (2019–2020) it never trained on, against a **93.0% teacher self-consistency ceiling** —
-capturing 75% of the reachable gap above a majority-class baseline. It catches **79% of
+*time* period (2019–2020) it never trained on, against a **90.8% teacher self-consistency ceiling** —
+capturing 78% of the reachable gap above a majority-class baseline. It catches **79% of
 high-materiality headlines**, the rarest and most important class. It runs at **2.5 ms/headline for
 $0** against **$1.14 per 1,000** for the teacher. Learning curve, ablations and the precision/recall
 trade-off: [`results/m3_summary.md`](results/m3_summary.md).
