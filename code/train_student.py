@@ -167,6 +167,10 @@ def main() -> None:
     ap.add_argument("--val-year", type=int, default=2018)
     ap.add_argument("--test-from", type=int, default=2019)
     ap.add_argument("--limit", type=int, default=None, help="cap training rows, for the learning curve")
+    ap.add_argument("--shuffle-labels", action="store_true",
+                    help="null test: permute the TRAINING labels so no headline-label relationship "
+                         "survives. Scores should collapse to chance; anything better means "
+                         "something is leaking the answer")
     ap.add_argument("--epochs", type=int, default=3)
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--max-length", type=int, default=64)
@@ -198,6 +202,13 @@ def main() -> None:
     train, val, test = split_by_time(df, args.val_year, args.test_from)
     if args.limit:
         train = train.sample(n=min(args.limit, len(train)), random_state=args.seed)
+    if args.shuffle_labels:
+        # Permute each label column independently across the training rows. Test labels are left
+        # untouched, so the model is asked the real question having learned nothing real.
+        train = train.copy()
+        for head in heads:
+            train[head] = train[head].sample(frac=1.0, random_state=args.seed).to_numpy()
+        print("NULL TEST: training labels permuted - expect scores at chance")
     for name, frame in (("train", train), ("val", val), ("test", test)):
         if frame.empty:
             raise SystemExit(f"{name} split is empty; check --val-year / --test-from")
@@ -282,6 +293,7 @@ def main() -> None:
 
     run = {
         "milestone": "M3", "encoder": args.encoder, "heads": list(heads),
+        "null_test": bool(args.shuffle_labels),
         "labels_tag": args.labels, "seed": args.seed, "epochs": args.epochs,
         "best_epoch": best_epoch, "best_val_mean_macro_f1": best_val,
         "n_train": len(train), "n_val": len(val), "n_test": len(test),
