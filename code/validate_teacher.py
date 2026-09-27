@@ -182,6 +182,15 @@ def check_materiality(args) -> None:
     daily = daily[daily["ticker"].isin(set(df["ticker"]))]
 
     j = df.merge(daily[["ticker", "news_date", "DlyRet", "DlyCap"]], on=["ticker", "news_date"])
+    # A ticker can be held by more than one PERMNO on a date - dual share classes, or a symbol
+    # reassigned after a delisting. Such a headline matches several companies' returns, and there
+    # is no way to tell which one the news was about, so drop it rather than double-count it or
+    # silently keep whichever row happened to sort first.
+    ambiguous = j["uid"].duplicated(keep=False)
+    if ambiguous.any():
+        print(f"  dropped {int(j.loc[ambiguous, 'uid'].nunique()):,} headlines whose ticker matched "
+              f"more than one company on the day")
+        j = j[~ambiguous]
     j["ret"] = pd.to_numeric(j["DlyRet"], errors="coerce")
     j["cap"] = pd.to_numeric(j["DlyCap"], errors="coerce")
     j = j.dropna(subset=["ret"])
