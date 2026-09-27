@@ -219,7 +219,8 @@ def mode_estimate(args) -> None:
     system_tokens = min(counted)  # dominated by the shared prefix
     fresh = max(mean_input - system_tokens, 0.0)
 
-    cache_write = system_tokens * in_rate * CACHE_WRITE_MULT / 1e6
+    write_mult = CACHE_WRITE_MULT["1h" if args.cache_ttl == "1h" else "5m"]
+    cache_write = system_tokens * in_rate * write_mult / 1e6
     per_item_in = (system_tokens * in_rate * CACHE_READ_MULT + fresh * in_rate) / 1e6
 
     print(f"sample          : {args.sample.name}")
