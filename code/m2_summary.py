@@ -63,7 +63,12 @@ def main() -> None:
         "# M2 - teacher-labelled news corpus",
         "",
         f"**{len(df):,} headlines** labelled by `claude-opus-5` at low reasoning effort, via the "
-        f"Batch API, plus {repeats:,} repeated headlines used to measure teacher self-consistency.",
+        f"Batch API, plus {repeats:,} repeated headlines.",
+        "",
+        "Those repeats were taken from the head of a date-ordered file, so they measured how "
+        "consistently the teacher reads 2009-2010 rather than the corpus. The self-consistency "
+        "ceiling quoted elsewhere (90.8%) comes from a separate 500-headline probe drawn at random "
+        "across all twelve years; these repeats are retained only as a record of the original run.",
         f"Source: FNSPID, {int(df['year'].min())}-{int(df['year'].max())}, "
         f"{df['Stock_symbol'].nunique():,} tickers.",
         "",

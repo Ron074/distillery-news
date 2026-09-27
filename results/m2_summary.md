@@ -1,6 +1,8 @@
 # M2 - teacher-labelled news corpus
 
-**43,296 headlines** labelled by `claude-opus-5` at low reasoning effort, via the Batch API, plus 500 repeated headlines used to measure teacher self-consistency.
+**43,296 headlines** labelled by `claude-opus-5` at low reasoning effort, via the Batch API, plus 500 repeated headlines.
+
+Those repeats were taken from the head of a date-ordered file, so they measured how consistently the teacher reads 2009-2010 rather than the corpus. The self-consistency ceiling quoted elsewhere (90.8%) comes from a separate 500-headline probe drawn at random across all twelve years; these repeats are retained only as a record of the original run.
 Source: FNSPID, 2009-2020, 5,223 tickers.
 
 Labels are not in this repository: they are regenerable from the sample and the code, and the raw corpus is large. See `code/teacher_label.py`.
