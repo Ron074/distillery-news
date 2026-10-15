@@ -51,15 +51,32 @@ ALLOWED = {"category": taxonomy.CATEGORIES,
 # "1. earnings | medium", "1, earnings, medium", "1) earnings medium".
 REPLY_LINE = re.compile(r"^\s*(\d+)\s*[.):,]?\s*([A-Za-z]+)\s*[|,;]?\s*([A-Za-z]*)\s*$")
 
-HEADER = """You are labelling financial news headlines for a research dataset.
-
-Use ONLY the rubric below. Do not use outside knowledge about any company, and do not let the
+FULL_RUBRIC_INTRO = """Use ONLY the rubric below. Do not use outside knowledge about any company, \
+and do not let the
 other headlines in this list influence how you read any single one - judge each on its own, as if
 it were the only headline you had been given.
 
 ================================ RUBRIC ================================
 {rubric}
-========================================================================
+========================================================================"""
+
+# The names-only arm: the label set with every definition withheld. It measures how far the ten
+# words get on their own, so the comparison against the full rubric isolates what the written
+# definitions are worth. Telling the model no definitions are coming is part of the condition -
+# otherwise it may stall or ask rather than commit to its own reading.
+NAMES_ONLY_INTRO = """Use ONLY the labels below. No definitions are provided: decide for yourself \
+what each label
+means and apply it consistently. Do not use outside knowledge about any company, and do not let
+the other headlines in this list influence how you read any single one - judge each on its own, as
+if it were the only headline you had been given.
+
+================================ LABELS =================================
+{labels}
+========================================================================="""
+
+HEADER = """You are labelling financial news headlines for a research dataset.
+
+{intro}
 
 Label these {n} headlines:
 
@@ -69,8 +86,8 @@ Output exactly {n} lines and nothing else - no preamble, no commentary, no blank
 
 {example}
 
-Every number from 1 to {n} must appear exactly once, in order. Use lowercase. If the rubric
-genuinely does not resolve a field for some headline, write `unsure` for that field.
+Every number from 1 to {n} must appear exactly once, in order. Use lowercase. If the instructions
+above genuinely do not resolve a field for some headline, write `unsure` for that field.
 """
 
 
@@ -78,10 +95,31 @@ def chunk_dir(data_dir: Path, name: str) -> Path:
     return data_dir / "gold" / name
 
 
+def resolve_name(args) -> str:
+    """Which arm's directory to work in. Explicit --out-name always wins."""
+    if args.out_name:
+        return args.out_name
+    return "second_annotator_names" if getattr(args, "names_only", False) else "second_annotator"
+
+
 def mode_prompt(args) -> None:
     data_dir = args.data_dir or default_data_dir()
-    out_dir = chunk_dir(data_dir, args.out_name)
+    # The two arms get separate directories by default. Sharing one would overwrite the first
+    # arm's manifest, and the uid mapping lives in that manifest - replies already collected
+    # would then be read against the wrong headlines, silently.
+    out_dir = chunk_dir(data_dir, resolve_name(args))
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = sorted(out_dir.glob("reply_*"))
+    manifest_path = out_dir / "manifest.json"
+    if existing and manifest_path.exists():
+        prior = json.loads(manifest_path.read_text(encoding="utf-8")).get("rubric")
+        if prior != ("names-only" if args.names_only else "full"):
+            raise SystemExit(
+                f"{out_dir} already holds {len(existing)} reply file(s) collected under the "
+                f"'{prior}' rubric.\n  Rewriting the manifest here would read them against the "
+                "wrong headlines.\n  Pass --out-name <something-else> for this arm."
+            )
 
     df = pd.read_csv(args.gold, dtype=str)
     # The sheet's own label columns are ignored on purpose: this reads the headlines only, so
@@ -97,10 +135,19 @@ def mode_prompt(args) -> None:
     # parser rejects it by name - a loud failure, where a biased example would have been silent.
     example = "\n".join(f"{i}. {' | '.join('<' + f + '>' for f in fields)}" for i in (1, 2))
 
+    if args.names_only:
+        labels = "\n\n".join(
+            f"{field.upper()} (choose exactly one):\n" + ", ".join(ALLOWED[field])
+            for field in fields)
+        intro = NAMES_ONLY_INTRO.format(labels=labels)
+    else:
+        intro = FULL_RUBRIC_INTRO.format(rubric=taxonomy.SYSTEM_PROMPT.strip())
+
     # Records WHICH rubric these answers were given under. If taxonomy.py is edited later, the
     # hash no longer matches and the comparison is known to be stale rather than assumed current.
-    rubric_sha = hashlib.sha256(taxonomy.SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:16]
+    rubric_sha = hashlib.sha256(intro.encode("utf-8")).hexdigest()[:16]
     manifest = {"gold_sheet": str(args.gold), "fields": fields, "chunk_size": args.chunk_size,
+                "rubric": "names-only" if args.names_only else "full",
                 "rubric_sha": rubric_sha, "chunks": {}}
     for index, start in enumerate(range(0, len(df), args.chunk_size), start=1):
         part = df.iloc[start:start + args.chunk_size]
@@ -109,8 +156,7 @@ def mode_prompt(args) -> None:
         # silently vanishes from the comparison. A small integer it can copy reliably, and the
         # parser can then demand that every one of them came back.
         headlines = "\n".join(f"{i}. {str(t).strip()}" for i, t in enumerate(part["Article_title"], start=1))
-        text = HEADER.format(rubric=taxonomy.SYSTEM_PROMPT.strip(), n=len(part),
-                             headlines=headlines, example=example)
+        text = HEADER.format(intro=intro, n=len(part), headlines=headlines, example=example)
         path = out_dir / f"chunk_{index:02d}.txt"
         path.write_text(text, encoding="utf-8")
         manifest["chunks"][f"{index:02d}"] = list(part["uid"])
@@ -169,7 +215,7 @@ def parse_reply(text: str, uids: list[str], fields: list[str], chunk: str) -> di
 
 def mode_parse(args) -> None:
     data_dir = args.data_dir or default_data_dir()
-    out_dir = chunk_dir(data_dir, args.out_name)
+    out_dir = chunk_dir(data_dir, resolve_name(args))
     manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
     fields = manifest["fields"]
 
@@ -231,7 +277,7 @@ def mode_import(args) -> None:
     comparison would measure whoever wrote the mapping table, not the annotator.
     """
     data_dir = args.data_dir or default_data_dir()
-    out_dir = chunk_dir(data_dir, args.out_name)
+    out_dir = chunk_dir(data_dir, resolve_name(args))
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fields = [f.strip() for f in args.fields.split(",") if f.strip()]
@@ -290,8 +336,13 @@ def main() -> None:
     p1.add_argument("--gold", type=Path, default=Path("data/gold/gold_blank_pilot.csv"))
     p1.add_argument("--chunk-size", type=int, default=25)
     p1.add_argument("--fields", default="category,materiality")
+    p1.add_argument("--names-only", action="store_true",
+                    help="give the label names with no definitions, to measure what the written "
+                         "rubric is worth over the names alone; writes to its own directory")
 
     p2 = sub.add_parser("parse", help="read the replies back into a scoreable sheet")
+    p2.add_argument("--names-only", action="store_true",
+                    help="read the names-only arm instead of the full-rubric one")
     p2.add_argument("--model", required=True,
                     help="which model answered, recorded alongside the labels; these change "
                          "under you, so 'gpt-5' beats 'chatgpt'")
@@ -308,7 +359,8 @@ def main() -> None:
 
     for p in (p1, p2, p3):
         p.add_argument("--data-dir", type=Path, default=None)
-        p.add_argument("--out-name", default="second_annotator")
+        p.add_argument("--out-name", default=None,
+                       help="directory under data/gold for this arm; defaults by --names-only")
 
     args = ap.parse_args()
     {"prompt": mode_prompt, "parse": mode_parse, "import": mode_import}[args.mode](args)
