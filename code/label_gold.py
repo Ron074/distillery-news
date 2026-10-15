@@ -18,6 +18,7 @@ import argparse
 import os
 import sys
 import textwrap
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -70,11 +71,45 @@ def legend(field: str) -> str:
     return "   ".join(pairs)
 
 
-def save(df: pd.DataFrame, path: Path) -> None:
-    """Write via a temporary file: an interrupted write cannot truncate the real sheet."""
+def save(df: pd.DataFrame, path: Path, attempts: int = 4) -> Path | None:
+    """Write via a temporary file: an interrupted write cannot truncate the real sheet.
+
+    Returns None on success, or the path answers were diverted to.
+
+    The replace is retried because on Windows it fails with "access is denied" when anything else
+    is holding either file for a moment - an antivirus scanner opening the newly written temp file
+    is the usual culprit, and it lets go within a few hundred milliseconds. If it keeps failing the
+    sheet is written in place instead, and only if that fails too are the answers put in a sidecar
+    file. Losing a session's labelling to a locked file is not an acceptable outcome.
+    """
     tmp = path.with_suffix(path.suffix + ".tmp")
     df.to_csv(tmp, index=False)
-    os.replace(tmp, path)
+    for attempt in range(attempts):
+        try:
+            os.replace(tmp, path)
+            return None
+        except PermissionError:
+            if attempt < attempts - 1:
+                time.sleep(0.25 * (attempt + 1))
+
+    try:                                  # give up on atomicity rather than on the answers
+        df.to_csv(path, index=False)
+        tmp.unlink(missing_ok=True)
+        return None
+    except PermissionError:
+        pass
+
+    sidecar = path.with_name(path.stem + ".recovered.csv")
+    df.to_csv(sidecar, index=False)
+    return sidecar
+
+
+def save_or_warn(df: pd.DataFrame, path: Path) -> None:
+    diverted = save(df, path)
+    if diverted:
+        print(f"\n  !! could not write {path} - something else is holding it open.")
+        print(f"  !! your answers so far are in {diverted}")
+        print("  !! close any program showing that file, then re-run; nothing is lost.\n")
 
 
 def main() -> None:
@@ -132,7 +167,7 @@ def main() -> None:
                 print(f"  {field:11s} {legend(field)}")
                 key = getkey()
                 if key == "q":
-                    save(df, args.gold)
+                    save_or_warn(df, args.gold)
                     done = sum(1 for n in df.index if all(df.at[n, f] for f in fields))
                     print(f"\n  saved. {done} of {len(df)} rows complete.\n")
                     return
@@ -162,10 +197,10 @@ def main() -> None:
 
         if stepped_back:
             continue
-        save(df, args.gold)
+        save_or_warn(df, args.gold)
         position += 1
 
-    save(df, args.gold)
+    save_or_warn(df, args.gold)
     done = sum(1 for n in df.index if all(df.at[n, f] for f in fields))
     unsure = {f: int((df[f] == UNSURE).sum()) for f in fields}
     print("=" * 78)
