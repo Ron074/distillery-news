@@ -23,6 +23,29 @@ Three rules from the rubric do most of the work:
 
 ---
 
+## One clean example of each of the ten
+
+Read these first. They are the uncontested centre of each category — the easy case you should be
+able to recognise instantly. Everything after this section is about the edges.
+
+| invented headline | category |
+|---|---|
+| Calder Group To Acquire Tessellate Software For $1.9 Billion In Cash | `merger` |
+| Veltrix Pharmaceuticals Announces Pricing Of $120 Million Underwritten Offering | `dilution` |
+| Zenith Therapeutics Says Phase 3 Trial Of ZT-104 Met Primary Endpoint | `clinical` |
+| Northgate Financial Reports Q3 Revenue Of $812 Million, EPS $0.62 | `earnings` |
+| Orbital Dynamics Wins $210 Million Air Force Satellite Servicing Contract | `contract` |
+| Caldera Mining Raises Full-Year Production Outlook To 410,000 Ounces | `guidance` |
+| SEC Charges Meridian Logistics Executives With Accounting Fraud | `legal` |
+| Harrowgate Aerospace Names Former Siemens Executive Chief Operating Officer | `insider` |
+| Piper Sandler Downgrades Nuvectra To Neutral, Cuts Target To $8 | `analyst` |
+| 10 Industrial Stocks Making Big Moves Thursday | `other` |
+
+If a real headline looks like one of these, it is that category. Most of the sheet looks like the
+last one.
+
+---
+
 ## Group 1 — an earnings *preview* is not `earnings`
 
 `earnings` means **reported results for a period**. A piece anticipating results reports nothing.
@@ -151,7 +174,58 @@ deal. A company launching its own product has no counterparty.
 
 ---
 
-## Group 8 — investor days and transcripts
+## Group 8 — `merger` includes deals that fall apart
+
+The rubric covers "M&A, acquisitions, takeovers, tender offers, mergers of equals, **and the
+termination or collapse of any of those**."
+
+| invented headline | category | materiality |
+|---|---|---|
+| Calder Group To Acquire Tessellate Software For $1.9 Billion In Cash | `merger` | `high` |
+| Tessellate Software Terminates Merger Agreement With Calder Group | `merger` | `high` |
+| Camber Industries Acquires Regional Drugstore Chain, Expands Small-Box Footprint | `merger` | `medium` |
+| Calder Group Commences Tender Offer For All Outstanding Tessellate Shares | `merger` | `high` |
+
+**Buying a business or a division is still `merger`**, not `contract` — the test is whether
+ownership of a company or business changes hands, versus two parties agreeing to trade with each
+other.
+
+**A terminated deal is `merger` and it is bearish.** This is the rubric's own warning: a merger
+headline is not automatically bullish. Category and direction are separate judgments.
+
+**Where the rubric genuinely runs out:** pure speculation. "Report: Camber Industries Exploring
+Sale, Sources Say" is not a deal, a tender offer, or a collapse — the rubric does not name it. A
+confirmed strategic review by the company reads as `merger`; a press rumour attributed to sources
+is arguably `other`. If you cannot resolve it, **`unsure` is the honest answer** and that row
+becomes evidence the codebook has a gap here.
+
+---
+
+## Group 9 — `clinical` versus `legal` when a regulator is involved
+
+Both categories mention regulators, and the split is sharp once you see it.
+
+| invented headline | category | materiality |
+|---|---|---|
+| Zenith Therapeutics Says Phase 2b Study Missed Primary Endpoint | `clinical` | `high` |
+| Helix Biosciences Receives Complete Response Letter From FDA | `clinical` | `high` |
+| FDA Places Clinical Hold On Zenith Therapeutics' ZT-220 Trial | `clinical` | `high` |
+| Veltrix Granted Orphan Drug Designation For VX-9 | `clinical` | `medium` |
+| Zenith Therapeutics Completes Enrollment In Phase 3 Cardiology Study | `clinical` | `medium` |
+| FDA Issues Warning Letter To Veltrix Over Manufacturing Practices At Ohio Plant | `legal` | `high` |
+
+The first five are **regulatory decisions about a product**: approvals, rejections, holds,
+designations, trial progress and results. All `clinical`.
+
+The last is **enforcement over non-compliance** — the rubric files "regulatory non-compliance,
+enforcement actions" under `legal`. The regulator is the same body; what it is doing is different.
+
+**The test:** is the regulator ruling on whether a product may proceed (`clinical`), or acting
+against the company for breaking a rule (`legal`)?
+
+---
+
+## Group 10 — investor days and transcripts
 
 | invented headline | category | materiality |
 |---|---|---|
