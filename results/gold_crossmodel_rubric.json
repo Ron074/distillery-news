@@ -1,0 +1,115 @@
+{
+  "milestone": "gold",
+  "gold_sheet": "data\\gold\\second_annotator\\gold_chatgpt-free-loggedout-2026-10-15.csv",
+  "labels_tag": "full",
+  "annotator": "ChatGPT, full rubric",
+  "counts": {
+    "rows in sheet": 100,
+    "rows filled": 100,
+    "rows blank": 0,
+    "category marked unsure": 0,
+    "materiality marked unsure": 0,
+    "direction marked unsure": 0
+  },
+  "fields": {
+    "category": {
+      "n": 100,
+      "agreement": 0.92,
+      "kappa": 0.882,
+      "majority_if_always_most_common": 0.5,
+      "top_disagreements": [
+        {
+          "annotator": "other",
+          "teacher": "earnings",
+          "n": 2
+        },
+        {
+          "annotator": "guidance",
+          "teacher": "earnings",
+          "n": 1
+        },
+        {
+          "annotator": "earnings",
+          "teacher": "other",
+          "n": 1
+        },
+        {
+          "annotator": "insider",
+          "teacher": "other",
+          "n": 1
+        },
+        {
+          "annotator": "merger",
+          "teacher": "other",
+          "n": 1
+        },
+        {
+          "annotator": "other",
+          "teacher": "legal",
+          "n": 1
+        },
+        {
+          "annotator": "other",
+          "teacher": "merger",
+          "n": 1
+        }
+      ]
+    },
+    "materiality": {
+      "n": 100,
+      "agreement": 0.92,
+      "kappa": 0.8285,
+      "majority_if_always_most_common": 0.68,
+      "top_disagreements": [
+        {
+          "annotator": "low",
+          "teacher": "medium",
+          "n": 3
+        },
+        {
+          "annotator": "medium",
+          "teacher": "low",
+          "n": 3
+        },
+        {
+          "annotator": "high",
+          "teacher": "medium",
+          "n": 1
+        },
+        {
+          "annotator": "medium",
+          "teacher": "high",
+          "n": 1
+        }
+      ]
+    },
+    "direction": {
+      "n": 100,
+      "agreement": 0.73,
+      "kappa": 0.5014,
+      "majority_if_always_most_common": 0.66,
+      "top_disagreements": [
+        {
+          "annotator": "bull",
+          "teacher": "neutral",
+          "n": 11
+        },
+        {
+          "annotator": "bear",
+          "teacher": "neutral",
+          "n": 8
+        },
+        {
+          "annotator": "neutral",
+          "teacher": "bull",
+          "n": 6
+        },
+        {
+          "annotator": "neutral",
+          "teacher": "bear",
+          "n": 2
+        }
+      ]
+    }
+  }
+}
