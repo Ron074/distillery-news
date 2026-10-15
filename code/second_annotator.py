@@ -176,11 +176,16 @@ def mode_parse(args) -> None:
     labels: dict[str, dict] = {}
     missing_files = []
     for chunk, uids in manifest["chunks"].items():
-        path = out_dir / f"reply_{chunk}.txt"
-        if not path.exists():
-            missing_files.append(path.name)
+        # Globbed rather than named exactly: Notepad's Save As will happily produce
+        # reply_01.txt.txt, and a reply silently not found is a chunk silently not compared.
+        found = sorted(p for p in out_dir.glob(f"reply_{chunk}*") if p.is_file())
+        if not found:
+            missing_files.append(f"reply_{chunk}.txt")
             continue
-        labels.update(parse_reply(path.read_text(encoding="utf-8"), uids, fields, chunk))
+        if len(found) > 1:
+            raise SystemExit(f"more than one file could be chunk {chunk}: "
+                             f"{[p.name for p in found]}\n  Delete the ones you do not want.")
+        labels.update(parse_reply(found[0].read_text(encoding="utf-8"), uids, fields, chunk))
 
     if missing_files:
         print(f"no reply yet for: {', '.join(missing_files)}")
