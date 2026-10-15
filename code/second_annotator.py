@@ -174,9 +174,19 @@ def mode_prompt(args) -> None:
     print("Shown a proposed answer, a model defers to it - that measures deference, not judgement.")
 
 
-def parse_reply(text: str, uids: list[str], fields: list[str], chunk: str) -> dict[str, dict]:
-    """Read one reply. Refuses on anything missing, duplicated or out of vocabulary."""
+def parse_reply(text: str, uids: list[str], fields: list[str], chunk: str,
+                as_unsure: frozenset[str] = frozenset()) -> dict[str, dict]:
+    """Read one reply. Refuses on anything missing, duplicated or out of vocabulary.
+
+    `as_unsure` names tokens to record as `unsure` instead of refusing - for an annotator that
+    answered outside the label set it was given. Those rows are then excluded from scoring rather
+    than assigned a label, which is the only treatment that adds no judgement of ours: translating
+    such a token to the label we think it meant would be annotating on the annotator's behalf.
+    The caller has to name each token explicitly and it is recorded in the run's metadata, so the
+    substitution is never silent.
+    """
     seen: dict[int, dict] = {}
+    substituted: list[tuple[int, str, str]] = []
     for line in text.splitlines():
         if not line.strip():
             continue
@@ -196,6 +206,9 @@ def parse_reply(text: str, uids: list[str], fields: list[str], chunk: str) -> di
         row = {}
         for position, field in enumerate(fields):
             value = values[position]
+            if value in as_unsure and value not in set(ALLOWED[field]):
+                substituted.append((number, field, value))
+                value = UNSURE
             if value not in set(ALLOWED[field]) | {UNSURE}:
                 raise SystemExit(
                     f"reply_{chunk}.txt line {number}: {field} is '{value}', which is not in the "
@@ -220,6 +233,11 @@ def parse_reply(text: str, uids: list[str], fields: list[str], chunk: str) -> di
             + (f"  numbers beyond the chunk: {extra}\n" if extra else "")
             + "  Ask the model for the missing lines, or re-paste that chunk, then run parse again."
         )
+    if substituted:
+        print(f"  reply_{chunk}.txt: recorded {len(substituted)} out-of-vocabulary answer(s) as "
+              f"`{UNSURE}` (excluded from scoring):")
+        for number, field, value in substituted:
+            print(f"    line {number}: {field} = '{value}'")
     return {uids[number - 1]: row for number, row in seen.items()}
 
 
@@ -228,6 +246,7 @@ def mode_parse(args) -> None:
     out_dir = chunk_dir(data_dir, resolve_name(args))
     manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
     fields = manifest["fields"]
+    as_unsure = frozenset(v.strip().lower() for v in (args.as_unsure or "").split(",") if v.strip())
 
     labels: dict[str, dict] = {}
     missing_files = []
@@ -241,7 +260,8 @@ def mode_parse(args) -> None:
         if len(found) > 1:
             raise SystemExit(f"more than one file could be chunk {chunk}: "
                              f"{[p.name for p in found]}\n  Delete the ones you do not want.")
-        labels.update(parse_reply(found[0].read_text(encoding="utf-8"), uids, fields, chunk))
+        labels.update(parse_reply(found[0].read_text(encoding="utf-8"), uids, fields, chunk,
+                                  as_unsure=as_unsure))
 
     if missing_files:
         print(f"no reply yet for: {', '.join(missing_files)}")
@@ -258,6 +278,7 @@ def mode_parse(args) -> None:
     gold.to_csv(out, index=False)
 
     meta = {"annotator": args.model, "fields": fields, "n_labelled": len(labels),
+            "recorded_as_unsure": sorted(as_unsure),
             "n_in_sheet": len(gold), "chunk_size": manifest["chunk_size"],
             "gold_sheet": manifest["gold_sheet"],
             "note": "cross-model agreement, not human validation; same rubric bytes as the "
@@ -354,6 +375,9 @@ def main() -> None:
                          "rubric is worth over the names alone; writes to its own directory")
 
     p2 = sub.add_parser("parse", help="read the replies back into a scoreable sheet")
+    p2.add_argument("--as-unsure", default=None,
+                    help="comma-separated tokens the annotator used that are outside the label "
+                         "set; recorded as `unsure` and excluded, never translated to a label")
     p2.add_argument("--names-only", action="store_true",
                     help="read the names-only arm instead of the full-rubric one")
     p2.add_argument("--model", required=True,
