@@ -47,9 +47,12 @@ ALLOWED = {"category": taxonomy.CATEGORIES,
            "materiality": taxonomy.MATERIALITY,
            "direction": taxonomy.DIRECTION}
 
-# Tolerant on how the model punctuates, strict on what the fields may contain. Accepts
-# "1. earnings | medium", "1, earnings, medium", "1) earnings medium".
-REPLY_LINE = re.compile(r"^\s*(\d+)\s*[.):,]?\s*([A-Za-z]+)\s*[|,;]?\s*([A-Za-z]*)\s*$")
+# Tolerant on how the model punctuates and on how many fields come back, strict on what each
+# field may contain. Accepts "1. earnings | medium", "1, earnings, medium, bull", "1) other low".
+# Three fields matter: taxonomy.SYSTEM_PROMPT opens by asking for three labels, so a run under
+# the full rubric returns direction whether or not the output format mentions it.
+REPLY_LINE = re.compile(
+    r"^\s*(\d+)\s*[.):,]?\s*([A-Za-z]+)(?:\s*[|,;]?\s*([A-Za-z]+))?(?:\s*[|,;]?\s*([A-Za-z]+))?\s*$")
 
 FULL_RUBRIC_INTRO = """Use ONLY the rubric below. Do not use outside knowledge about any company, \
 and do not let the
@@ -182,10 +185,17 @@ def parse_reply(text: str, uids: list[str], fields: list[str], chunk: str) -> di
             continue  # prose the model added around its answer; the completeness check below is
                       # what guarantees nothing real was skipped
         number = int(m.group(1))
-        values = [m.group(2).lower(), m.group(3).lower()]
+        values = [g.lower() for g in m.groups()[1:] if g]
+        if len(values) < len(fields):
+            raise SystemExit(
+                f"reply_{chunk}.txt line {number} gives {len(values)} label(s) "
+                f"({', '.join(values)}) but {len(fields)} were asked for "
+                f"({', '.join(fields)}).\n  Re-paste that chunk, or ask the model for the "
+                "missing field, then run parse again."
+            )
         row = {}
         for position, field in enumerate(fields):
-            value = values[position] if position < len(values) else ""
+            value = values[position]
             if value not in set(ALLOWED[field]) | {UNSURE}:
                 raise SystemExit(
                     f"reply_{chunk}.txt line {number}: {field} is '{value}', which is not in the "
@@ -335,7 +345,7 @@ def main() -> None:
     p1 = sub.add_parser("prompt", help="write the chunk files to paste into the other model")
     p1.add_argument("--gold", type=Path, default=Path("data/gold/gold_blank_pilot.csv"))
     p1.add_argument("--chunk-size", type=int, default=25)
-    p1.add_argument("--fields", default="category,materiality")
+    p1.add_argument("--fields", default="category,materiality,direction")
     p1.add_argument("--names-only", action="store_true",
                     help="give the label names with no definitions, to measure what the written "
                          "rubric is worth over the names alone; writes to its own directory")
@@ -351,7 +361,7 @@ def main() -> None:
     p3.add_argument("--file", type=Path, required=True, help="the filled sheet to import")
     p3.add_argument("--gold", type=Path, default=Path("data/gold/gold_blank_pilot.csv"))
     p3.add_argument("--model", required=True)
-    p3.add_argument("--fields", default="category,materiality",
+    p3.add_argument("--fields", default="category,materiality,direction",
                     help="only these fields are imported; the rest stay blank")
     p3.add_argument("--rubric-shown", action="store_true",
                     help="record that the annotator was given the rubric; without it the run is "
