@@ -261,7 +261,10 @@ def mode_parse(args) -> None:
             "n_in_sheet": len(gold), "chunk_size": manifest["chunk_size"],
             "gold_sheet": manifest["gold_sheet"],
             "note": "cross-model agreement, not human validation; same rubric bytes as the "
-                    "teacher's system prompt; labelled blind, never shown the teacher's labels"}
+                    "teacher's system prompt; labelled blind, never shown the teacher's labels. "
+                    "`annotator` records provenance - product, tier and date - not necessarily an "
+                    "exact model version: a consumer chat UI does not reliably disclose which "
+                    "checkpoint served a request, and asking the model itself is unreliable."}
     (out_dir / f"meta_{slug}.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
     print(f"\n{len(labels)} of {len(gold)} rows labelled by {args.model}")
