@@ -95,8 +95,8 @@ def score_field(gold: pd.DataFrame, field: str) -> dict:
         "agreement": round(float(agree.mean()), 4),
         "kappa": round(cohen_kappa(mine, teacher), 4),
         "majority_if_always_most_common": round(float(teacher.value_counts(normalize=True).max()), 4),
-        "top_disagreements": [{"human": h, "teacher": t, "n": int(n)}
-                              for (h, t), n in confusion.items()],
+        "top_disagreements": [{"annotator": a, "teacher": t, "n": int(n)}
+                              for (a, t), n in confusion.items()],
     }
 
 
@@ -107,6 +107,8 @@ def main() -> None:
     ap.add_argument("--fields", default="category,materiality")
     ap.add_argument("--data-dir", type=Path, default=None)
     ap.add_argument("--results-dir", type=Path, default=None)
+    ap.add_argument("--annotator", default="the second annotator",
+                    help="who labelled the sheet; appears in the printout and the saved report")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
@@ -134,9 +136,10 @@ def main() -> None:
         raise SystemExit(f"no overlap between the sheet and tag '{args.tag}'")
 
     report = {"milestone": "gold", "gold_sheet": str(args.gold), "labels_tag": args.tag,
-              "counts": counts, "fields": {}}
+              "annotator": args.annotator, "counts": counts, "fields": {}}
 
-    print(f"\nthe teacher against a human judgement formed independently of it, on {len(gold)} headlines:")
+    print(f"\nthe teacher against {args.annotator}, labelling independently of it, "
+          f"on {len(gold)} headlines:")
     print(f"\n  {'field':12s} {'n':>5s} {'agree':>8s} {'kappa':>8s} {'always-majority':>16s}")
     for field in fields:
         s = score_field(gold, field)
@@ -150,9 +153,10 @@ def main() -> None:
     for field in fields:
         s = report["fields"][field]
         if s.get("top_disagreements"):
-            print(f"\nwhere you and the teacher disagreed on {field} (human -> teacher):")
+            print(f"\nwhere {args.annotator} and the teacher disagreed on {field}:")
             for d in s["top_disagreements"]:
-                print(f"  {d['n']:>3d}  you said {d['human']:<10s} teacher said {d['teacher']}")
+                print(f"  {d['n']:>3d}  annotator said {d['annotator']:<10s} "
+                      f"teacher said {d['teacher']}")
 
     print("\nRead the kappa, not the agreement: the `always-majority` column is what a labeller")
     print("who ignored every headline and wrote the most common label would have scored.")

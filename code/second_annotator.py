@@ -216,6 +216,67 @@ def mode_parse(args) -> None:
     print(f"  python code/score_gold.py --gold {out} --tag full --fields {','.join(fields)}")
 
 
+def mode_import(args) -> None:
+    """Take a sheet an annotator filled in outside this workflow, if its values are ours.
+
+    Case and whitespace are normalised, because `Medium` and `medium` are the same answer typed
+    differently. Nothing else is translated. A value outside the vocabulary is refused by name
+    rather than mapped, because mapping a free-form label like "Earnings / Management Change" onto
+    one of ten categories is the annotation judgement itself - if this script made that call, the
+    comparison would measure whoever wrote the mapping table, not the annotator.
+    """
+    data_dir = args.data_dir or default_data_dir()
+    out_dir = chunk_dir(data_dir, args.out_name)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    fields = [f.strip() for f in args.fields.split(",") if f.strip()]
+    df = pd.read_csv(args.file, dtype=str)
+    gold = pd.read_csv(args.gold, dtype=str)
+
+    if "uid" not in df.columns:
+        raise SystemExit(f"{args.file} has no uid column; it cannot be joined")
+    if set(df["uid"]) != set(gold["uid"]):
+        only_theirs = sorted(set(df["uid"]) - set(gold["uid"]))[:5]
+        only_ours = sorted(set(gold["uid"]) - set(df["uid"]))[:5]
+        raise SystemExit(f"uids do not match {args.gold}:\n"
+                         f"  not in the sheet: {only_theirs}\n  missing from the file: {only_ours}")
+
+    out = gold.copy()
+    for field in fields:
+        if field not in df.columns:
+            raise SystemExit(f"{args.file} has no `{field}` column (columns: {list(df.columns)})")
+        values = df.set_index("uid")[field].fillna("").str.strip().str.lower()
+        bad = sorted(set(values) - set(ALLOWED[field]) - {"", UNSURE})
+        if bad:
+            raise SystemExit(
+                f"{len(bad)} {field} value(s) in {Path(args.file).name} are outside the "
+                f"vocabulary:\n" + "".join(f"    {v}\n" for v in bad[:50])
+                + f"  allowed: {', '.join(ALLOWED[field])} (or '{UNSURE}')\n"
+                "  These are not spelling slips to be patched over: choosing which allowed label "
+                "each one means\n  IS the annotation judgement, and it has to be made by the "
+                "annotator, not here. Re-run that\n  field with the rubric (see `prompt` mode)."
+            )
+        out[field] = out["uid"].map(values).fillna("")
+        other = [f for f in ALLOWED if f in out.columns and f not in fields]
+        for f in other:
+            out[f] = ""   # fields not imported stay blank so score_gold skips them
+
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", args.model)
+    dest = out_dir / f"gold_{slug}.csv"
+    out.to_csv(dest, index=False)
+    meta = {"annotator": args.model, "fields": fields, "source_file": str(args.file),
+            "n_rows": len(out), "rubric_shown": args.rubric_shown,
+            "note": "cross-model agreement, not human validation"}
+    (out_dir / f"meta_{slug}.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+
+    print(f"imported {', '.join(fields)} for {len(out)} rows from {Path(args.file).name}")
+    for field in fields:
+        counts = {k: int(v) for k, v in out[out[field] != ""][field].value_counts().items()}
+        print(f"  {field}: {counts}")
+    print(f"\nwrote {dest}")
+    print(f"\n  python code/score_gold.py --gold {dest} --tag full --fields {','.join(fields)}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="mode", required=True)
@@ -230,12 +291,22 @@ def main() -> None:
                     help="which model answered, recorded alongside the labels; these change "
                          "under you, so 'gpt-5' beats 'chatgpt'")
 
-    for p in (p1, p2):
+    p3 = sub.add_parser("import", help="take a sheet filled in outside this workflow")
+    p3.add_argument("--file", type=Path, required=True, help="the filled sheet to import")
+    p3.add_argument("--gold", type=Path, default=Path("data/gold/gold_blank_pilot.csv"))
+    p3.add_argument("--model", required=True)
+    p3.add_argument("--fields", default="category,materiality",
+                    help="only these fields are imported; the rest stay blank")
+    p3.add_argument("--rubric-shown", action="store_true",
+                    help="record that the annotator was given the rubric; without it the run is "
+                         "marked as having labelled from the column names alone")
+
+    for p in (p1, p2, p3):
         p.add_argument("--data-dir", type=Path, default=None)
         p.add_argument("--out-name", default="second_annotator")
 
     args = ap.parse_args()
-    {"prompt": mode_prompt, "parse": mode_parse}[args.mode](args)
+    {"prompt": mode_prompt, "parse": mode_parse, "import": mode_import}[args.mode](args)
 
 
 if __name__ == "__main__":

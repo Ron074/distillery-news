@@ -1,0 +1,37 @@
+{
+  "milestone": "gold",
+  "gold_sheet": "data\\gold\\second_annotator\\gold_gpt-norubric.csv",
+  "labels_tag": "full",
+  "annotator": "ChatGPT, no rubric",
+  "counts": {
+    "rows in sheet": 100,
+    "rows filled": 100,
+    "rows blank": 0,
+    "materiality marked unsure": 0
+  },
+  "fields": {
+    "materiality": {
+      "n": 100,
+      "agreement": 0.82,
+      "kappa": 0.6526,
+      "majority_if_always_most_common": 0.68,
+      "top_disagreements": [
+        {
+          "annotator": "medium",
+          "teacher": "low",
+          "n": 10
+        },
+        {
+          "annotator": "high",
+          "teacher": "medium",
+          "n": 7
+        },
+        {
+          "annotator": "low",
+          "teacher": "medium",
+          "n": 1
+        }
+      ]
+    }
+  }
+}
