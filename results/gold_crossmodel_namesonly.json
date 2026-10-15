@@ -1,0 +1,130 @@
+{
+  "milestone": "gold",
+  "gold_sheet": "data\\gold\\second_annotator_names\\gold_chatgpt-free-loggedout-2026-10-15-namesonly.csv",
+  "labels_tag": "full",
+  "annotator": "ChatGPT, names only",
+  "counts": {
+    "rows in sheet": 100,
+    "rows filled": 100,
+    "rows blank": 0,
+    "category marked unsure": 0,
+    "materiality marked unsure": 0,
+    "direction marked unsure": 2
+  },
+  "fields": {
+    "category": {
+      "n": 100,
+      "agreement": 0.82,
+      "kappa": 0.7495,
+      "majority_if_always_most_common": 0.5,
+      "top_disagreements": [
+        {
+          "annotator": "earnings",
+          "teacher": "other",
+          "n": 3
+        },
+        {
+          "annotator": "guidance",
+          "teacher": "other",
+          "n": 3
+        },
+        {
+          "annotator": "other",
+          "teacher": "insider",
+          "n": 2
+        },
+        {
+          "annotator": "analyst",
+          "teacher": "other",
+          "n": 2
+        },
+        {
+          "annotator": "clinical",
+          "teacher": "other",
+          "n": 1
+        },
+        {
+          "annotator": "analyst",
+          "teacher": "earnings",
+          "n": 1
+        },
+        {
+          "annotator": "guidance",
+          "teacher": "legal",
+          "n": 1
+        },
+        {
+          "annotator": "guidance",
+          "teacher": "earnings",
+          "n": 1
+        },
+        {
+          "annotator": "insider",
+          "teacher": "other",
+          "n": 1
+        },
+        {
+          "annotator": "legal",
+          "teacher": "insider",
+          "n": 1
+        }
+      ]
+    },
+    "materiality": {
+      "n": 100,
+      "agreement": 0.53,
+      "kappa": 0.2577,
+      "majority_if_always_most_common": 0.68,
+      "top_disagreements": [
+        {
+          "annotator": "medium",
+          "teacher": "low",
+          "n": 34
+        },
+        {
+          "annotator": "high",
+          "teacher": "medium",
+          "n": 11
+        },
+        {
+          "annotator": "high",
+          "teacher": "low",
+          "n": 1
+        },
+        {
+          "annotator": "low",
+          "teacher": "medium",
+          "n": 1
+        }
+      ]
+    },
+    "direction": {
+      "n": 98,
+      "agreement": 0.7143,
+      "kappa": 0.5204,
+      "majority_if_always_most_common": 0.6531,
+      "top_disagreements": [
+        {
+          "annotator": "bull",
+          "teacher": "neutral",
+          "n": 17
+        },
+        {
+          "annotator": "bear",
+          "teacher": "neutral",
+          "n": 8
+        },
+        {
+          "annotator": "neutral",
+          "teacher": "bull",
+          "n": 2
+        },
+        {
+          "annotator": "bull",
+          "teacher": "bear",
+          "n": 1
+        }
+      ]
+    }
+  }
+}
