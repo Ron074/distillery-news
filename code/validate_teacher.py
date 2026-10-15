@@ -9,7 +9,7 @@ breaks that loop by testing a teacher label against a fact recorded somewhere el
                date for that ticker. Compares the hit rate for tagged items against the rate for
                everything else, so the result is a lift over the base rate rather than a bare number.
 
-    python code/validate_teacher.py earnings --tag pilot --wrds-dir R:/Databases2
+    python code/validate_teacher.py earnings --tag pilot --wrds-dir <your-wrds-pull>
 
 The reference data is academically licensed. It is read from --wrds-dir (or $DISTILLERY_WRDS_DIR),
 never copied into this repository, and is used for validation only - it is never a training input.
