@@ -1,0 +1,111 @@
+{
+  "milestone": "gold",
+  "gold_sheet": "data\\gold\\gold_filled_pilot_untrained.csv",
+  "labels_tag": "full",
+  "annotator": "human, untrained",
+  "counts": {
+    "rows in sheet": 100,
+    "rows filled": 100,
+    "rows blank": 0,
+    "category marked unsure": 1,
+    "materiality marked unsure": 0
+  },
+  "fields": {
+    "category": {
+      "n": 99,
+      "agreement": 0.5354,
+      "kappa": 0.3722,
+      "majority_if_always_most_common": 0.4949,
+      "top_disagreements": [
+        {
+          "annotator": "analyst",
+          "teacher": "other",
+          "n": 8
+        },
+        {
+          "annotator": "analyst",
+          "teacher": "earnings",
+          "n": 6
+        },
+        {
+          "annotator": "guidance",
+          "teacher": "other",
+          "n": 6
+        },
+        {
+          "annotator": "insider",
+          "teacher": "other",
+          "n": 4
+        },
+        {
+          "annotator": "other",
+          "teacher": "analyst",
+          "n": 4
+        },
+        {
+          "annotator": "other",
+          "teacher": "earnings",
+          "n": 3
+        },
+        {
+          "annotator": "contract",
+          "teacher": "merger",
+          "n": 2
+        },
+        {
+          "annotator": "earnings",
+          "teacher": "other",
+          "n": 2
+        },
+        {
+          "annotator": "contract",
+          "teacher": "other",
+          "n": 2
+        },
+        {
+          "annotator": "other",
+          "teacher": "merger",
+          "n": 2
+        }
+      ]
+    },
+    "materiality": {
+      "n": 100,
+      "agreement": 0.68,
+      "kappa": 0.3314,
+      "majority_if_always_most_common": 0.68,
+      "top_disagreements": [
+        {
+          "annotator": "medium",
+          "teacher": "low",
+          "n": 10
+        },
+        {
+          "annotator": "low",
+          "teacher": "medium",
+          "n": 10
+        },
+        {
+          "annotator": "high",
+          "teacher": "medium",
+          "n": 5
+        },
+        {
+          "annotator": "high",
+          "teacher": "low",
+          "n": 3
+        },
+        {
+          "annotator": "low",
+          "teacher": "high",
+          "n": 2
+        },
+        {
+          "annotator": "medium",
+          "teacher": "high",
+          "n": 2
+        }
+      ]
+    }
+  }
+}
