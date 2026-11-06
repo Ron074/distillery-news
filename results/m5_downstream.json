@@ -1,0 +1,190 @@
+{
+  "check": "m5_downstream",
+  "measure": "|abnormal return| %",
+  "n_joined": 7694,
+  "n_tickers": 2715,
+  "n_days": 364,
+  "population": "held-out test split only",
+  "se": "CR1 cluster-robust, clustered by ticker",
+  "controls": "market-cap band dummies, first band as reference",
+  "student_recovers_fraction_of_teacher_effect": 0.4731,
+  "runs": {
+    "teacher": {
+      "label_source": "teacher labels (claude-opus-5)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 5.9855,
+          "se": 0.712,
+          "t": 8.406,
+          "p": 6.733884040786807e-17
+        },
+        "medium": {
+          "coef": 1.111,
+          "se": 0.1777,
+          "t": 6.253,
+          "p": 4.6565324316638633e-10
+        },
+        "high": {
+          "coef": 5.5597,
+          "se": 0.9061,
+          "t": 6.135,
+          "p": 9.729270389327322e-10
+        },
+        "band:micro": {
+          "coef": -2.1477,
+          "se": 0.7788,
+          "t": -2.758,
+          "p": 0.0058591539765777126
+        },
+        "band:small": {
+          "coef": -2.9288,
+          "se": 0.7353,
+          "t": -3.983,
+          "p": 6.9845197350325e-05
+        },
+        "band:mid": {
+          "coef": -4.2278,
+          "se": 0.7178,
+          "t": -5.89,
+          "p": 4.335665879002293e-09
+        },
+        "band:large": {
+          "coef": -4.8167,
+          "se": 0.7105,
+          "t": -6.779,
+          "p": 1.4758523209294372e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 1.004,
+        "medium": 1.652,
+        "high": 2.35
+      },
+      "n_by_tier": {
+        "low": 5448,
+        "medium": 2022,
+        "high": 224
+      }
+    },
+    "student": {
+      "label_source": "student predictions (FinBERT, held-out)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 6.1258,
+          "se": 0.7251,
+          "t": 8.448,
+          "p": 4.7477208023767644e-17
+        },
+        "medium": {
+          "coef": 0.8299,
+          "se": 0.1528,
+          "t": 5.431,
+          "p": 6.099667634429056e-08
+        },
+        "high": {
+          "coef": 2.6302,
+          "se": 0.4138,
+          "t": 6.356,
+          "p": 2.4272501923926323e-10
+        },
+        "band:micro": {
+          "coef": -2.2255,
+          "se": 0.7909,
+          "t": -2.814,
+          "p": 0.00492781724599882
+        },
+        "band:small": {
+          "coef": -3.029,
+          "se": 0.7488,
+          "t": -4.045,
+          "p": 5.369268082497823e-05
+        },
+        "band:mid": {
+          "coef": -4.2903,
+          "se": 0.7306,
+          "t": -5.872,
+          "p": 4.8338486052492e-09
+        },
+        "band:large": {
+          "coef": -4.9204,
+          "se": 0.7236,
+          "t": -6.8,
+          "p": 1.2822852159723911e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 0.997,
+        "medium": 1.584,
+        "high": 1.713
+      },
+      "n_by_tier": {
+        "low": 5181,
+        "medium": 1973,
+        "high": 540
+      }
+    },
+    "student_shuffled": {
+      "label_source": "student labels shuffled (null arm)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 6.5032,
+          "se": 0.7429,
+          "t": 8.754,
+          "p": 3.542259359772005e-18
+        },
+        "medium": {
+          "coef": 0.0967,
+          "se": 0.1801,
+          "t": 0.537,
+          "p": 0.5913390031326012
+        },
+        "high": {
+          "coef": 0.525,
+          "se": 0.4258,
+          "t": 1.233,
+          "p": 0.21769312668941848
+        },
+        "band:micro": {
+          "coef": -2.3061,
+          "se": 0.8151,
+          "t": -2.829,
+          "p": 0.004698272963108348
+        },
+        "band:small": {
+          "coef": -3.0423,
+          "se": 0.7709,
+          "t": -3.946,
+          "p": 8.136269252961622e-05
+        },
+        "band:mid": {
+          "coef": -4.327,
+          "se": 0.753,
+          "t": -5.747,
+          "p": 1.0114830043057724e-08
+        },
+        "band:large": {
+          "coef": -4.9789,
+          "se": 0.7439,
+          "t": -6.693,
+          "p": 2.6440138242267114e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 1.14,
+        "medium": 1.159,
+        "high": 1.217
+      },
+      "n_by_tier": {
+        "low": 5181,
+        "medium": 1973,
+        "high": 540
+      }
+    }
+  }
+}
