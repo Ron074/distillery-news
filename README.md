@@ -62,14 +62,15 @@ anyway. The framing question: **does more context improve impact prediction, and
    full-article** (the extension above).
 
 ## Status
-Early-stage. This repo is being built as incremental commits; **results are not yet populated** — the sections
-below fill in as milestones complete. No results are reported until the corresponding step is done.
+Being built as incremental commits. M1, M2, M3 and M5 are complete and their results are in
+[`results/`](results/); the remaining sections fill in as those milestones land. No result is reported
+until the corresponding step has actually been run.
 
 - [x] M1 — Reproduce FinBERT on Financial PhraseBank → [`results/m1_summary.md`](results/m1_summary.md)
 - [x] M2 — Teacher-label a public news sample → [`results/m2_summary.md`](results/m2_summary.md)
 - [x] M3 — Distill the FinBERT student; measure fidelity → [`results/m3_summary.md`](results/m3_summary.md)
 - [ ] M4 — Cost / latency vs. baselines
-- [ ] M5 — Downstream check against real moves
+- [x] M5 — Downstream check against real moves → [`results/m5_summary.md`](results/m5_summary.md)
 - [ ] M6 — Full-article vs. headline ablation
 - [ ] M7 — Poster, report, repo polish
 

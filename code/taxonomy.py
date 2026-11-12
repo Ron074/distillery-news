@@ -1,6 +1,6 @@
 """The label schema the teacher applies and the student learns.
 
-Nine categories x three materiality tiers, plus a direction field that is only committed to when
+Ten categories x three materiality tiers, plus a direction field that is only committed to when
 the text says so outright. The schema is deliberately small: every extra output field is billed at
 output-token rates across the whole corpus, and the student only ever learns these three labels.
 """
