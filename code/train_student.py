@@ -131,13 +131,18 @@ def encode_batch(tokenizer, texts, max_length, device):
 
 
 @torch.no_grad()
-def predict(model, tokenizer, texts, heads, device, batch_size, max_length):
+def predict(model, tokenizer, texts, heads, device, batch_size, max_length, return_probs=False):
     model.eval()
     out = {name: [] for name in heads}
+    probs = {name: [] for name in heads}
     for i in range(0, len(texts), batch_size):
         logits = model(**encode_batch(tokenizer, texts[i:i + batch_size], max_length, device))
         for name in heads:
             out[name].extend(logits[name].argmax(-1).cpu().tolist())
+            if return_probs:
+                probs[name].append(torch.softmax(logits[name].float(), dim=-1).cpu().numpy())
+    if return_probs:
+        return out, {name: np.concatenate(p) for name, p in probs.items()}
     return out
 
 
@@ -187,7 +192,8 @@ def main() -> None:
                     help="which project this checkpoint belongs to; recorded in the saved "
                          "meta.json so a figure can be traced back to the run that produced it")
     ap.add_argument("--save-predictions", type=Path, default=None,
-                    help="write per-headline student and teacher labels for the test split (M5 needs these)")
+                    help="write per-headline student and teacher labels for the test split (M5 needs "
+                         "these), plus each head's softmax as p_<head>_<label> and conf_<head> (M6 needs those)")
     ap.add_argument("--tag", default=None)
     args = ap.parse_args()
 
@@ -285,12 +291,24 @@ def main() -> None:
     if args.save_predictions:
         # M5 joins the student's per-headline calls to realised price moves, which aggregate
         # metrics cannot support. Saved keyed by uid so it joins back to the corpus.
-        preds = predict(model, tokenizer, test["Article_title"].tolist(), heads, device,
-                        args.batch_size, args.max_length)
+        # The softmax is kept as well as the label: M6 routes on confidence, and a threshold-free
+        # comparison against the baseline needs scores, not argmaxes. The M3 run on record kept
+        # labels only, which is why neither could be done from it.
+        preds, probs = predict(model, tokenizer, test["Article_title"].tolist(), heads, device,
+                               args.batch_size, args.max_length, return_probs=True)
         out = test[["uid"]].copy()
         for name, names in heads.items():
             out[f"student_{name}"] = [names[i] for i in preds[name]]
             out[f"teacher_{name}"] = test[name].values
+        for name, names in heads.items():
+            p = probs[name]
+            # Same logits, so the argmax of the saved probabilities must be the saved label.
+            # Checked here rather than trusted, since a column-order slip would pass silently.
+            if not (p.argmax(1) == np.asarray(preds[name])).all():
+                raise SystemExit(f"{name}: saved probabilities disagree with saved labels")
+            for j, label in enumerate(names):
+                out[f"p_{name}_{label}"] = p[:, j].round(6)
+            out[f"conf_{name}"] = p.max(1).round(6)
         args.save_predictions.parent.mkdir(parents=True, exist_ok=True)
         out.to_csv(args.save_predictions, index=False)
         print(f"saved {len(out):,} test predictions -> {args.save_predictions}")
@@ -306,6 +324,8 @@ def main() -> None:
         "train_seconds": train_seconds, "infer_seconds": infer_seconds,
         "ms_per_headline": infer_seconds / max(len(test), 1) * 1000,
         "device": device, "test": test_scores,
+        "predictions_file": args.save_predictions.name if args.save_predictions else None,
+        "predictions_have_probabilities": bool(args.save_predictions),
         "teacher_self_consistency_note": "teacher agrees with itself 90.8% on all three fields, measured over 500 randomly drawn headlines; "
                                          "that is the ceiling on fidelity",
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -365,6 +385,7 @@ def main() -> None:
             "limit": args.limit,
             "test_scores": test_scores,
             "results_file": f"m3_{tag}.json",
+            "predictions_file": run["predictions_file"],
             "sha256": digest.hexdigest(),
             "timestamp": run["timestamp"],
             "platform": run["platform"],
