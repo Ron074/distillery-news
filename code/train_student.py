@@ -18,6 +18,7 @@ Designed to run on a free Colab GPU. On CPU it works but takes hours per run.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import time
@@ -182,6 +183,9 @@ def main() -> None:
     ap.add_argument("--data-dir", type=Path, default=None)
     ap.add_argument("--results-dir", type=Path, default=None)
     ap.add_argument("--save-dir", type=Path, default=None)
+    ap.add_argument("--project", default="stat",
+                    help="which project this checkpoint belongs to; recorded in the saved "
+                         "meta.json so a figure can be traced back to the run that produced it")
     ap.add_argument("--save-predictions", type=Path, default=None,
                     help="write per-headline student and teacher labels for the test split (M5 needs these)")
     ap.add_argument("--tag", default=None)
@@ -330,10 +334,44 @@ def main() -> None:
 
     if args.save_dir:
         args.save_dir.mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), args.save_dir / "student.pt")
+        weights = args.save_dir / "student.pt"
+        torch.save(model.state_dict(), weights)
         tokenizer.save_pretrained(args.save_dir)
         (args.save_dir / "heads.json").write_text(json.dumps(heads), encoding="utf-8")
+
+        # A checkpoint that cannot say which run produced it is a misattributed number
+        # waiting to happen. Write the provenance beside the weights, not in a chat log.
+        digest = hashlib.sha256()
+        with open(weights, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                digest.update(chunk)
+        teacher = sorted(set(train["model"].dropna())) if "model" in train.columns else None
+        meta = {
+            "project": args.project,
+            "encoder": args.encoder,
+            "label_sets": heads,
+            "max_length": args.max_length,
+            "teacher_model": teacher,
+            "prompt_sha1": hashlib.sha1(taxonomy.SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:12],
+            "labels_tag": args.labels,
+            "sample": str(args.sample),
+            "n_train": len(train), "n_val": len(val), "n_test": len(test),
+            "near_duplicates_dropped": int(dropped),
+            "split": run["split"],
+            "epochs": args.epochs, "best_epoch": best_epoch,
+            "batch_size": args.batch_size, "lr": args.lr,
+            "weight_decay": args.weight_decay, "seed": args.seed,
+            "shuffle_labels": bool(args.shuffle_labels),
+            "limit": args.limit,
+            "test_scores": test_scores,
+            "results_file": f"m3_{tag}.json",
+            "sha256": digest.hexdigest(),
+            "timestamp": run["timestamp"],
+            "platform": run["platform"],
+        }
+        (args.save_dir / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
         print(f"saved student -> {args.save_dir}")
+        print(f"  project={meta['project']}  teacher={teacher}  sha256={meta['sha256'][:16]}...")
 
 
 if __name__ == "__main__":
