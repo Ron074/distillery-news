@@ -20,6 +20,7 @@ data/gold/
 *.safetensors
 checkpoints/
 runs/
+*.npz
 
 # --- logs / runtime scratch ---
 *.log
