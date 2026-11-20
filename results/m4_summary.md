@@ -46,6 +46,34 @@ Same pipeline and C, training labels permuted. Every head collapses to or below 
 - **Where the student earns its cost is the hard part:** direction (+4.5 points accuracy, +0.073 macro-F1), and the rare `high` tier (79% recall against the baseline's best 58% at equal precision). A plausible reading, not yet tested: direction turns on word order and negation, and `high` on finding a rare class at all - both places a bag of words is weak. An error analysis of the rows where the two models disagree would check it.
 - Materiality accuracy is the wrong lens for this project: it is 73% `low`, so both models score on the easy majority.
 
-Baseline speed on this laptop's CPU, all three heads: 0.016 ms per headline batched, 0.89 ms one at a time (median of 5 repeats; single runs varied up to 3x). The full cost table - teacher, student, baseline - is the second half of M4.
 
-Source: `m4_baseline.json` (2026-11-12T21:58:34+00:00, Windows AMD64 python 3.14.5). Regenerate with `python code/m4_summary.py`.
+## Cost and speed per 1,000 headlines
+
+Every row names its device: the same student is 30x faster on a GPU than on this laptop, and the two figures had been quoted interchangeably. 'One at a time' is what a person typing a headline waits; 'batched' is throughput over a backlog.
+
+| arm | runs on | $ per 1,000 | ms per headline, one at a time | ms per headline, batched | headlines / s, one at a time | source |
+|---|---|---|---|---|---|---|
+| teacher, real-time API | Anthropic API, over the network | **$2.299** | 1,863 (median; p90 2,510) | - | 0.5 | `m4_teacher_live.json`, 200 calls |
+| teacher, Batch API | Anthropic batch | **$1.135** | asynchronous: no per-request latency (batch wall-clock not recorded) | - | - | 24 Sep run, recorded at collection |
+| student (FinBERT, 3 heads) | this laptop, CPU, 4 threads | **$0** | 85.1 | 70.4 | 11.7 | `m3_checkpoint_check.json` |
+| student (FinBERT, 3 heads) | Colab T4 GPU | $0 (free tier) | - | 2.31 | - | `m3_3head.json` |
+| TF-IDF + LR baseline | this laptop, CPU | **$0** | 0.89 | 0.016 | 1,126 | `m4_baseline.json` |
+
+**Read across a row, one at a time:** the student answers in 85 ms on a laptop with no GPU and no key, about 22x faster than the teacher's 1.9 s, at no marginal cost. The baseline is about 96x faster again - which is why the accuracy comparison above, not speed, is what decides between student and baseline.
+
+The two teacher prices cross-check: real-time costs 2.03x the batch rate, where the published 50% batch discount predicts 2x. The real-time figure is with a warm prompt cache (97% of input tokens were cache reads); the first call of a session costs $0.0118, as it writes the cache.
+
+## The student is not free: it was paid for in labels
+
+Its marginal cost is zero, but it exists because the teacher labelled its 32,929 training and validation headlines. At the measured batch rate that is **$37.36** - the cheapest those labels could have been bought. The project actually spent about $79 on M2, including pilots, a consistency probe, and relabelling the first 20,000 headlines once the `analyst` category was added.
+
+So against a real-time teacher the student pays for its labels after about **16,000 headlines** at the minimum label cost, or about 34,000 at what was actually spent; every headline after that is free. Training itself cost nothing extra (a free Colab T4, minutes per run).
+
+## Caveats
+
+- Teacher latency is wall-clock from this laptop, including the network, for `claude-opus-5` at `low` effort on 200 random test headlines, measured 2026-11-20 (UTC). It will vary with load and location; the median and p90 are reported for that reason.
+- The batch rate comes from the 9-category prompt; the final prompt is about 47% longer in input tokens, almost all of it cached. The real-time run uses the final prompt.
+- Live answers matched the stored teacher labels on category 93.5%, materiality 97.5%, direction 98.5%. That only confirms the same task was asked; the teacher's self-consistency is measured in M2.
+- Baseline timing varied up to 3x between runs on this laptop; medians of 5 repeats are reported.
+
+Sources: `m4_baseline.json`, `m4_teacher_live.json`, `m3_checkpoint_check.json`, `m3_3head.json`. Regenerate with `python code/m4_summary.py`.

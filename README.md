@@ -69,7 +69,7 @@ until the corresponding step has actually been run.
 - [x] M1 — Reproduce FinBERT on Financial PhraseBank → [`results/m1_summary.md`](results/m1_summary.md)
 - [x] M2 — Teacher-label a public news sample → [`results/m2_summary.md`](results/m2_summary.md)
 - [x] M3 — Distill the FinBERT student; measure fidelity → [`results/m3_summary.md`](results/m3_summary.md)
-- [ ] M4 — Cost / latency vs. baselines
+- [x] M4 — Cost / latency vs. baselines → [`results/m4_summary.md`](results/m4_summary.md)
 - [x] M5 — Downstream check against real moves → [`results/m5_summary.md`](results/m5_summary.md)
 - [ ] M6 — Full-article vs. headline ablation
 - [ ] M7 — Poster, report, repo polish
@@ -130,8 +130,10 @@ for everything else, a **4.97× lift**. Full distribution and the planned time-b
 The distilled student reproduces the teacher at **0.861 accuracy on `category`** over a held-out
 *time* period (2019–2020) it never trained on, against a **90.8% teacher self-consistency ceiling** —
 capturing 78% of the reachable gap above a majority-class baseline. It catches **79% of
-high-materiality headlines**, the rarest and most important class. It runs at **2.5 ms/headline for
-$0** against **$1.14 per 1,000** for the teacher.
+high-materiality headlines**, the rarest and most important class. On a laptop CPU with no GPU it
+answers in **85 ms per headline for $0**, against **1.9 s and $2.30 per 1,000** for the teacher's
+real-time API ($1.135 per 1,000 through the Batch API). On a Colab T4 it takes 2.3 ms. Full cost
+table: [`results/m4_summary.md`](results/m4_summary.md).
 
 Verified two ways rather than self-reported: the metrics are recomputable from saved per-headline
 predictions (match to four decimals), and a **null test** — training labels permuted so no

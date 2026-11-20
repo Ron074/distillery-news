@@ -1,0 +1,43 @@
+{
+  "milestone": "M4",
+  "arm": "teacher, real-time Messages API",
+  "model": "claude-opus-5",
+  "effort": "low",
+  "n_calls": 200,
+  "sample": "random 200 of the 8,591 test headlines, seed 42",
+  "latency_ms": {
+    "median": 1863.0828000605106,
+    "mean": 1980.6026680022478,
+    "p10": 1546.3343799347058,
+    "p90": 2509.53166000545,
+    "max": 3616.668100003153
+  },
+  "cost_total_usd": 0.46930924999999996,
+  "cost_per_1000_usd_warm_cache": 2.2989221105527635,
+  "first_call_cost_usd": 0.01182375,
+  "tokens": {
+    "input": 7188,
+    "output": 10148,
+    "cache_read": 338101,
+    "cache_write": 1699
+  },
+  "output_tokens_per_call_mean": 50.74,
+  "parsed": 200,
+  "stop_reasons": {
+    "end_turn": 200
+  },
+  "agreement_with_stored_teacher_labels": {
+    "category": 0.935,
+    "materiality": 0.975,
+    "direction": 0.985
+  },
+  "rates_per_mtok": {
+    "input": 5.0,
+    "output": 25.0,
+    "cache_read_mult": 0.1,
+    "cache_write_5m_mult": 1.25,
+    "batch_discount": "not applied"
+  },
+  "timestamp": "2026-11-20T03:28:01+00:00",
+  "platform": "Windows AMD64 python 3.14.5"
+}
