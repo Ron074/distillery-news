@@ -2,7 +2,7 @@
 
 One FinBERT encoder with three heads, trained on 26,976 teacher-labelled headlines and tested on **8,591 headlines from 2019 onward** - a period the model never saw. Near-duplicate headlines were removed before splitting (1,776 dropped), so no templated item sits on both sides.
 
-**Fidelity means agreement with the teacher, not correctness.** Asked the same 500 randomly drawn headlines twice, the teacher gives the same answer on all three fields 90.8% of the time. That is the ceiling; a student at 86% is closing most of the reachable gap rather than falling 14 points short of perfect.
+**Fidelity means agreement with the teacher, not correctness.** Asked the same 500 randomly drawn headlines twice, the teacher gives the same answer on all three fields 90.8% of the time. That is the reference point; a student at 86% is closing most of the gap to it rather than falling 14 points short of perfect. It is not a hard ceiling - a model that always gave the teacher's most likely answer could exceed it - so the 'share of reachable gap' column below slightly overstates how close the student is (see `m6_summary.md`).
 
 ## Main model
 
@@ -61,11 +61,5 @@ Reported metrics were also recomputed independently from the saved per-headline 
 
 ## Cost and speed
 
-| | per 1,000 headlines |
-|---|---|
-| teacher (`claude-opus-5`, Batch API) | $1.14, plus minutes of queue latency |
-| student on GPU | $0.00, 2.3 s |
-| student on CPU | $0.00, ~45 s |
-
-The student needs no API key and no network. That is the project's headline claim, measured rather than asserted.
+On the Colab T4 used for training, inference ran at 2.31 ms per headline in batches. That is one device among several: the measured cost-and-speed table, with the teacher's real-time and batch prices and the student on a laptop CPU, is in [`m4_summary.md`](m4_summary.md).
 

@@ -14,7 +14,9 @@ from pathlib import Path
 from m1_reproduce import default_results_dir
 
 # How often the teacher agrees with itself, over 500 headlines drawn at RANDOM from the corpus.
-# No student can exceed this, so every fidelity number is quoted against it rather than 100%.
+# Every fidelity number is quoted against it rather than 100%. It is a reference point, not a hard
+# ceiling: a model that always gave the teacher's most likely answer would agree with one stored
+# draw more often than two draws agree with each other (found in M6, 2026-11-19).
 # An earlier figure of 93.0% was measured on the first 500 rows of a date-ordered file, i.e. on
 # 2009-2010 alone, where the corpus is mostly commentary and the calls are easier. Re-measured
 # across all twelve years it is 90.8%, and the category component falls furthest.
@@ -60,8 +62,11 @@ def main() -> None:
         "",
         f"**Fidelity means agreement with the teacher, not correctness.** Asked the same 500 "
         f"randomly drawn headlines twice, the teacher gives the same answer on all three fields "
-        f"{TEACHER_SELF_CONSISTENCY_ALL_THREE:.1%} of the time. That is the ceiling; a student at "
-        f"86% is closing most of the reachable gap rather than falling 14 points short of perfect.",
+        f"{TEACHER_SELF_CONSISTENCY_ALL_THREE:.1%} of the time. That is the reference point; a student at "
+        f"86% is closing most of the gap to it rather than falling 14 points short of perfect. It is not "
+        "a hard ceiling - a model that always gave the teacher's most likely answer could exceed it - so "
+        "the 'share of reachable gap' column below slightly overstates how close the student is "
+        "(see `m6_summary.md`).",
         "",
         "## Main model",
         "",
@@ -190,13 +195,13 @@ def main() -> None:
             "predictions and match to four decimal places on all three heads.",
         ]
 
+    # This section used to carry its own cost table, with a CPU figure ("~45 s per 1,000") that was
+    # an estimate, never measured; M4 measured 70-85 s. Costs now live in one place.
     lines += ["", "## Cost and speed", "",
-              "| | per 1,000 headlines |", "|---|---|",
-              "| teacher (`claude-opus-5`, Batch API) | $1.14, plus minutes of queue latency |",
-              f"| student on GPU | $0.00, {main_run['ms_per_headline'] * 1000 / 1000:.1f} s |",
-              "| student on CPU | $0.00, ~45 s |", "",
-              "The student needs no API key and no network. That is the project's headline claim, "
-              "measured rather than asserted.", ""]
+              f"On the Colab T4 used for training, inference ran at {main_run['ms_per_headline']:.2f} ms per "
+              "headline in batches. That is one device among several: the measured cost-and-speed table, with "
+              "the teacher's real-time and batch prices and the student on a laptop CPU, is in "
+              "[`m4_summary.md`](m4_summary.md).", ""]
 
     out = results_dir / "m3_summary.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")

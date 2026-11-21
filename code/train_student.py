@@ -9,8 +9,9 @@ what would actually be deployed.
     python code/train_student.py --labels full --sample ... --limit 5000        # learning curve
 
 Fidelity here means agreement with the teacher, not correctness. Asked the same 500 randomly drawn
-headlines twice, the teacher agrees with itself 90.8% of the time - that is the ceiling, and it
-belongs beside any fidelity number.
+headlines twice, the teacher agrees with itself 90.8% of the time. That reference point belongs
+beside any fidelity number. It is not a hard ceiling: two random draws of the teacher agree less
+often than a model that always gave its most likely answer would agree with one draw.
 
 Designed to run on a free Colab GPU. On CPU it works but takes hours per run.
 """
@@ -327,7 +328,7 @@ def main() -> None:
         "predictions_file": args.save_predictions.name if args.save_predictions else None,
         "predictions_have_probabilities": bool(args.save_predictions),
         "teacher_self_consistency_note": "teacher agrees with itself 90.8% on all three fields, measured over 500 randomly drawn headlines; "
-                                         "that is the ceiling on fidelity",
+                                         "the reference point for fidelity (not a hard ceiling)",
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "platform": f"{platform.system()} {platform.machine()} python {platform.python_version()}",
     }

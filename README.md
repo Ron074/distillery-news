@@ -36,11 +36,13 @@ matches the teacher.
       agreement (acc/F1)    LLM vs student               price moves as well as the teacher's?
 ```
 
-## Extension under study — headline vs. full article
-A headline often hides or distorts meaning. We test whether feeding the model the **full article body** helps.
-It cuts three ways — see [`report/m6_reference_cases.md`](report/m6_reference_cases.md) for real examples where
-the body *rescues* direction, *amplifies* promotional bias, and *correctly stays neutral* while the stock moves
-anyway. The framing question: **does more context improve impact prediction, and on which cases?**
+## Extension — where is extra context worth paying for?
+A headline often hides or distorts meaning; see [`report/m6_reference_cases.md`](report/m6_reference_cases.md)
+for real examples where the article body *rescues* direction, *amplifies* promotional bias, or *correctly stays
+neutral* while the stock moves anyway. The plan was to compare headline-only labels against full-article labels.
+It became **confidence routing** instead: calibrate the student, leave the headlines it is sure of alone, and
+send only the uncertain ones to the teacher. The body comparison itself was not run, because none of the
+48,040 sampled headlines carries article text in the corpus file used. It stays as future work (below).
 
 ## Data
 - **Financial PhraseBank** — for reproducing the FinBERT sentiment baseline (public).
@@ -51,27 +53,31 @@ anyway. The framing question: **does more context improve impact prediction, and
 ## Models
 - **Teacher:** an existing zero-shot LLM classifier.
 - **Student:** FinBERT (fine-tuned); **DistilBERT** as a smaller/faster comparison.
-- **Baseline:** TF-IDF + logistic regression (to show the transformer earns its complexity).
+- **Baseline:** TF-IDF + logistic regression on the same split. It nearly matches the student on category
+  and overall materiality accuracy; the student earns its cost on direction and the rare `high` tier (M4).
 
 ## Evaluation
 1. **Fidelity** — student-vs-teacher agreement (accuracy / macro-F1, per-class confusion).
 2. **Cost & latency** — dollars and milliseconds per 1k headlines, LLM vs. student (the headline result).
 3. **Downstream usefulness** — do the student's labels predict real moves as well as the teacher's, controlling
    for company size?
-4. **Ablations** — learning curve (labels needed), model size (FinBERT vs DistilBERT), and **headline-only vs.
-   full-article** (the extension above).
+4. **Ablations** — learning curve (labels needed), model size (FinBERT vs DistilBERT), and two-head vs three-head.
+5. **Confidence** — calibration fitted on 2018, and routing the least-confident headlines to the teacher
+   (the extension above).
 
 ## Status
-Being built as incremental commits. M1, M2, M3 and M5 are complete and their results are in
-[`results/`](results/); the remaining sections fill in as those milestones land. No result is reported
-until the corresponding step has actually been run.
+Being built as incremental commits. M1 to M6 are complete and their results are in
+[`results/`](results/); the poster and report (M7) are in progress. No result is reported until the
+corresponding step has actually been run.
 
 - [x] M1 — Reproduce FinBERT on Financial PhraseBank → [`results/m1_summary.md`](results/m1_summary.md)
 - [x] M2 — Teacher-label a public news sample → [`results/m2_summary.md`](results/m2_summary.md)
 - [x] M3 — Distill the FinBERT student; measure fidelity → [`results/m3_summary.md`](results/m3_summary.md)
 - [x] M4 — Cost / latency vs. baselines → [`results/m4_summary.md`](results/m4_summary.md)
 - [x] M5 — Downstream check against real moves → [`results/m5_summary.md`](results/m5_summary.md)
-- [ ] M6 — Full-article vs. headline ablation
+- [x] M6 — Confidence: calibration and routing, headline only → [`results/m6_summary.md`](results/m6_summary.md)
+  *(planned as headline vs. full article; no sampled headline has article text, so the body comparison is
+  future work)*
 - [ ] M7 — Poster, report, repo polish
 
 ## Reproduction
@@ -105,8 +111,8 @@ python code/m2_summary.py --sample data/samples/<clean>.csv      # rebuild resul
 ```
 
 `submit` skips any headline already labelled, so an interrupted or unfunded run resumes rather than
-re-paying. `--duplicates` re-asks about N headlines to measure teacher self-consistency, which is the
-ceiling on student fidelity. Validation against external records needs WRDS access:
+re-paying. `--duplicates` re-asks about N headlines to measure teacher self-consistency, the reference
+point for student fidelity. Validation against external records needs WRDS access:
 
 ```bash
 python code/validate_teacher.py earnings --tag full --sample data/samples/<clean>.csv --wrds-dir <path>
@@ -121,15 +127,19 @@ and the contamination caveat on the off-the-shelf checkpoint: [`results/m1_summa
 ### M2 result
 **43,296 headlines** (2009–2020, 5,223 tickers) labelled by `claude-opus-5` across 10 categories, three
 materiality tiers and three directions. Asked the same 500 randomly drawn headlines twice, the teacher gives
-the same answer on all three fields **90.8%** of the time — the ceiling on any student's fidelity. Against outside records,
+the same answer on all three fields **90.8%** of the time, the reference point for any student's fidelity
+(a useful one, though not a hard ceiling; see M6). Against outside records,
 **68.4%** of `earnings`-tagged headlines fall within two days of a real quarterly report date versus 13.8%
 for everything else, a **4.97× lift**. Full distribution and the planned time-based split:
 [`results/m2_summary.md`](results/m2_summary.md).
 
 ### M3 result
 The distilled student reproduces the teacher at **0.861 accuracy on `category`** over a held-out
-*time* period (2019–2020) it never trained on, against a **90.8% teacher self-consistency ceiling** —
-capturing 78% of the reachable gap above a majority-class baseline. It catches **79% of
+*time* period (2019–2020) it never trained on. Asked the same headline twice, the teacher repeats its own
+category 96.2% of the time; measured against that, the student closes 78% of the gap above a majority-class
+baseline. That slightly overstates it, because repeat agreement is not a hard ceiling: a model that always
+gave the teacher's most likely answer could exceed it (see [`results/m6_summary.md`](results/m6_summary.md)).
+It catches **79% of
 high-materiality headlines**, the rarest and most important class. On a laptop CPU with no GPU it
 answers in **85 ms per headline for $0**, against **1.9 s and $2.30 per 1,000** for the teacher's
 real-time API ($1.135 per 1,000 through the Batch API). On a Colab T4 it takes 2.3 ms. Full cost
