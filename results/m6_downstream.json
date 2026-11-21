@@ -1,0 +1,265 @@
+{
+  "milestone": "M6 gated high, downstream",
+  "measure": "|abnormal return| %",
+  "population": "held-out test split only",
+  "se": "CR1, clustered by ticker",
+  "rule": {
+    "calibrator": "temperature_bias",
+    "temperature": 1.2493838706396725,
+    "bias": [
+      0.0,
+      -0.8479233263882322,
+      -2.9189143540587295
+    ],
+    "tau": 0.3097283627965267,
+    "teacher_high_rate_val": 0.031076768016126324,
+    "student_high_rate_val_gated": 0.031076768016126324
+  },
+  "rule_fixed_on": "2018 validation year; no returns read before it was fixed",
+  "n_joined": 7694,
+  "n_tickers": 2715,
+  "share_of_teacher_effect": {
+    "teacher": 1.0,
+    "student": 0.4731,
+    "student_gated": 0.7349,
+    "student_gated_shuffled": 0.0814
+  },
+  "runs": {
+    "teacher": {
+      "label_source": "teacher labels (claude-opus-5)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 5.9855,
+          "se": 0.712,
+          "t": 8.406,
+          "p": 6.733884040785446e-17
+        },
+        "medium": {
+          "coef": 1.111,
+          "se": 0.1777,
+          "t": 6.253,
+          "p": 4.6565324316642376e-10
+        },
+        "high": {
+          "coef": 5.5597,
+          "se": 0.9061,
+          "t": 6.135,
+          "p": 9.729270389327092e-10
+        },
+        "band:micro": {
+          "coef": -2.1477,
+          "se": 0.7788,
+          "t": -2.758,
+          "p": 0.005859153976577357
+        },
+        "band:small": {
+          "coef": -2.9288,
+          "se": 0.7353,
+          "t": -3.983,
+          "p": 6.984519735031853e-05
+        },
+        "band:mid": {
+          "coef": -4.2278,
+          "se": 0.7178,
+          "t": -5.89,
+          "p": 4.335665879001668e-09
+        },
+        "band:large": {
+          "coef": -4.8167,
+          "se": 0.7105,
+          "t": -6.779,
+          "p": 1.4758523209291303e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 1.004,
+        "medium": 1.652,
+        "high": 2.35
+      },
+      "n_by_tier": {
+        "low": 5448,
+        "medium": 2022,
+        "high": 224
+      }
+    },
+    "student": {
+      "label_source": "student, argmax (as in M5)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 6.1258,
+          "se": 0.7251,
+          "t": 8.448,
+          "p": 4.7477208023764094e-17
+        },
+        "medium": {
+          "coef": 0.8299,
+          "se": 0.1528,
+          "t": 5.431,
+          "p": 6.099667634429571e-08
+        },
+        "high": {
+          "coef": 2.6302,
+          "se": 0.4138,
+          "t": 6.356,
+          "p": 2.4272501923927507e-10
+        },
+        "band:micro": {
+          "coef": -2.2255,
+          "se": 0.7909,
+          "t": -2.814,
+          "p": 0.004927817245998763
+        },
+        "band:small": {
+          "coef": -3.029,
+          "se": 0.7488,
+          "t": -4.045,
+          "p": 5.369268082497866e-05
+        },
+        "band:mid": {
+          "coef": -4.2903,
+          "se": 0.7306,
+          "t": -5.872,
+          "p": 4.833848605249273e-09
+        },
+        "band:large": {
+          "coef": -4.9204,
+          "se": 0.7236,
+          "t": -6.8,
+          "p": 1.282285215972447e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 0.997,
+        "medium": 1.584,
+        "high": 1.713
+      },
+      "n_by_tier": {
+        "low": 5181,
+        "medium": 1973,
+        "high": 540
+      }
+    },
+    "student_gated": {
+      "label_source": "student, high gated on calibrated P(high)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 6.1895,
+          "se": 0.7241,
+          "t": 8.548,
+          "p": 2.0655246728784124e-17
+        },
+        "medium": {
+          "coef": 0.9778,
+          "se": 0.1565,
+          "t": 6.248,
+          "p": 4.81498700975894e-10
+        },
+        "high": {
+          "coef": 4.0857,
+          "se": 0.9782,
+          "t": 4.177,
+          "p": 3.0510077435474554e-05
+        },
+        "band:micro": {
+          "coef": -2.2633,
+          "se": 0.7919,
+          "t": -2.858,
+          "p": 0.004297274066805523
+        },
+        "band:small": {
+          "coef": -3.0392,
+          "se": 0.75,
+          "t": -4.052,
+          "p": 5.216263521220843e-05
+        },
+        "band:mid": {
+          "coef": -4.2863,
+          "se": 0.7318,
+          "t": -5.857,
+          "p": 5.274416073326215e-09
+        },
+        "band:large": {
+          "coef": -4.9163,
+          "se": 0.7244,
+          "t": -6.787,
+          "p": 1.3995616175874556e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 1.023,
+        "medium": 1.611,
+        "high": 1.868
+      },
+      "n_by_tier": {
+        "low": 5580,
+        "medium": 1942,
+        "high": 172
+      }
+    },
+    "student_gated_shuffled": {
+      "label_source": "gated labels shuffled (null arm)",
+      "n": 7694,
+      "clusters": 2715,
+      "terms": {
+        "intercept": {
+          "coef": 6.5205,
+          "se": 0.7413,
+          "t": 8.796,
+          "p": 2.4677507835745582e-18
+        },
+        "medium": {
+          "coef": 0.1396,
+          "se": 0.1908,
+          "t": 0.732,
+          "p": 0.4644633943510339
+        },
+        "high": {
+          "coef": 0.4528,
+          "se": 0.775,
+          "t": 0.584,
+          "p": 0.5590832366235753
+        },
+        "band:micro": {
+          "coef": -2.3095,
+          "se": 0.8147,
+          "t": -2.835,
+          "p": 0.004618552829852468
+        },
+        "band:small": {
+          "coef": -3.0421,
+          "se": 0.7708,
+          "t": -3.946,
+          "p": 8.135272908602523e-05
+        },
+        "band:mid": {
+          "coef": -4.3287,
+          "se": 0.7525,
+          "t": -5.752,
+          "p": 9.797344586128102e-09
+        },
+        "band:large": {
+          "coef": -4.9794,
+          "se": 0.7435,
+          "t": -6.697,
+          "p": 2.5683024665966827e-11
+        }
+      },
+      "median_abs_ret": {
+        "low": 1.131,
+        "medium": 1.19,
+        "high": 1.176
+      },
+      "n_by_tier": {
+        "low": 5580,
+        "medium": 1942,
+        "high": 172
+      }
+    }
+  }
+}

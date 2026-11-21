@@ -48,8 +48,21 @@ An escalated headline is not scored as certainly right. The teacher, asked again
 
 **The teacher's self-consistency is not a hard ceiling.** With the class-bias correction at 50% escalation, adjusted agreement reaches 91.9%, above the teacher's own repeat rate of 90.8%. That is not a leak. Self-consistency is how often two random draws of the teacher agree; a deterministic model that always gave the teacher's most likely answer would match a single stored draw more often than that. The M3 'share of reachable gap' figures, which treat self-consistency as the ceiling, therefore slightly overstate how close the student is.
 
-## Does a calibrated `high` recover the effect on returns? (not yet run)
+## Does a calibrated `high` recover the effect on returns?
 
-The gating rule is fixed in `code/m6_downstream.py` from 2018 data alone. Running it needs the licensed price data, so the result is pending; nothing about it is reported here until it has run.
+M5 found the student's `high` carries part of the teacher's effect on same-day abnormal returns, diluted because it calls `high` too often. Here `high` is called only when the calibrated P(high) is at least 0.310 - a bar set on 2018 so the student flags `high` exactly as often as the teacher did there (3.11%), before any return was read. Same join, controls and clustering as M5; 7,694 headlines, 2,715 tickers.
 
-Sources: `m6_calibration.json`. Regenerate with `python code/m6_summary.py`.
+| labels | headlines called `high` | high vs low, pp | se | t | share of teacher's effect |
+|---|---|---|---|---|---|
+| teacher labels (claude-opus-5) | 224 | +5.56 | 0.906 | 6.13 | 100% |
+| student, argmax (as in M5) | 540 | +2.63 | 0.414 | 6.36 | 47% |
+| student, high gated on calibrated P(high) | 172 | +4.09 | 0.978 | 4.18 | 73% |
+| gated labels shuffled (null arm) | 172 | +0.45 | 0.775 | 0.58 | 8% |
+
+**Suggestive, not established.** The point estimate rises from 47% to 73% of the teacher's effect, and the shuffled arm collapses (t = 0.58). But the gated estimate's 95% interval, about +2.2 to +6.0 pp, includes the ungated student's +2.63, so the improvement is not shown to exceed noise. A paired bootstrap over the same rows would test it.
+
+**The gated student flags fewer headlines than the teacher here** (172 against 224). The bar matched the teacher's 2018 rate, and 2019-2020 differs. Part of the gain may be extra selectivity; re-matching the rate on these rows would mean tuning on the test set, which the design rules out. Headlines demoted from `high` mostly become `medium`, which now carries its own effect (+0.98 pp, t = 6.25).
+
+A same-day association, not causation; see M5 for why that caveat cuts against the result rather than for it.
+
+Sources: `m6_calibration.json`, `m6_downstream.json`. Regenerate with `python code/m6_summary.py`.

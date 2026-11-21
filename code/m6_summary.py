@@ -129,8 +129,29 @@ def main() -> None:
             hh = r["terms"]["high"]
             lines.append(f"| {r['label_source']} | {r['n_by_tier']['high']:,} | {hh['coef']:+.2f} | "
                          f"{hh['se']:.3f} | {hh['t']:.2f} | {share[k]:.0%} |")
-        lines += ["", "A same-day association, not causation; see M5 for why that caveat cuts against "
-                  "the result rather than for it.", ""]
+        g, s, t = runs["student_gated"], runs["student"], runs["teacher"]
+        gh = g["terms"]["high"]
+        lo, hi = gh["coef"] - 1.96 * gh["se"], gh["coef"] + 1.96 * gh["se"]
+        lines += [
+            "",
+            f"**Suggestive, not established.** The point estimate rises from {share['student']:.0%} to "
+            f"{share['student_gated']:.0%} of the teacher's effect, and the shuffled arm collapses "
+            f"(t = {runs['student_gated_shuffled']['terms']['high']['t']:.2f}). But the gated estimate's 95% "
+            f"interval, about {lo:+.1f} to {hi:+.1f} pp, includes the ungated student's "
+            f"{s['terms']['high']['coef']:+.2f}, so the improvement is not shown to exceed noise. A paired "
+            "bootstrap over the same rows would test it.",
+            "",
+            f"**The gated student flags fewer headlines than the teacher here** ({g['n_by_tier']['high']:,} "
+            f"against {t['n_by_tier']['high']:,}). The bar matched the teacher's 2018 rate, and 2019-2020 "
+            "differs. Part of the gain may be extra selectivity; re-matching the rate on these rows would "
+            "mean tuning on the test set, which the design rules out. Headlines demoted from `high` mostly "
+            f"become `medium`, which now carries its own effect ({g['terms']['medium']['coef']:+.2f} pp, "
+            f"t = {g['terms']['medium']['t']:.2f}).",
+            "",
+            "A same-day association, not causation; see M5 for why that caveat cuts against the result "
+            "rather than for it.",
+            "",
+        ]
     else:
         lines += [
             "## Does a calibrated `high` recover the effect on returns? (not yet run)",

@@ -13,6 +13,8 @@ JSON from the run and a `*_summary.md` generated from it by a script in `code/`:
 - **M4**: `m4_baseline.json`, `m4_teacher_live.json`, `m4_summary.md`. The TF-IDF baseline on the
   same split, and the cost-and-speed table.
 - **M5**: `m5_downstream.json`, `m5_summary.md`. Do the student's labels predict real moves?
+- **M6**: `m6_calibration.json`, `m6_downstream.json`, `m6_summary.md`. Calibration, confidence
+  routing, and whether a calibrated `high` recovers the effect on returns.
 - **Gold set**: `gold_*.json`. Teacher against a second annotator: human, untrained, and two
   cross-model arms.
 - `preds_*.csv`: per-headline predictions (the probability file included). Git-ignored like every
@@ -20,13 +22,14 @@ JSON from the run and a `*_summary.md` generated from it by a script in `code/`:
 
 ## Provenance of the price-validated files
 
-`m2_earnings_check.json`, `m2_materiality_check.json` and `m5_downstream.json` are the only files
+`m2_earnings_check.json`, `m2_materiality_check.json`, `m5_downstream.json` and `m6_downstream.json`
+are the only files
 here computed from **academically licensed reference data** (CRSP daily returns and Compustat
 announcement dates, obtained through the author's institutional WRDS subscription).
 
 What that means for this repository:
 
-- **No licensed data is redistributed here.** These three files hold aggregate statistics only —
+- **No licensed data is redistributed here.** These four files hold aggregate statistics only —
   counts, medians, regression coefficients and p-values pooled over thousands of headlines and
   hundreds of companies. There is no identifier of any kind in them: no PERMNO, GVKEY, CUSIP,
   ticker symbol, date, or per-observation return, and no way to recover one from what is reported.
@@ -38,5 +41,5 @@ What that means for this repository:
   it appears in any source file.
 
 Reporting aggregate results of research is what the academic licence is for; redistributing the
-underlying data is not, and is not done. Anyone wishing to reproduce these three files needs their
+underlying data is not, and is not done. Anyone wishing to reproduce these four files needs their
 own WRDS access — see `data/README.md`.
